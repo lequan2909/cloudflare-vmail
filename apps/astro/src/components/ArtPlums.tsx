@@ -113,8 +113,8 @@ const CanvasComponent: React.FC = () => {
 
   return (
     <div
-      className="fixed top-0 bottom-0 left-0 right-0 pointer-events-none print:hidden -z-10"
-      style={{ userSelect: 'none', maskImage: 'radial-gradient(circle, transparent, black)', WebkitMaskImage: 'radial-gradient(circle, transparent, black)' }}
+      className="fixed top-0 bottom-0 left-0 right-0 print:hidden"
+      style={{ pointerEvents: 'none', maskImage: 'radial-gradient(circle, transparent, black)', WebkitMaskImage: 'radial-gradient(circle, transparent, black)' }}
     >
       <canvas ref={el} width="400" height="400" />
     </div>
