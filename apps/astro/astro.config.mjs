@@ -15,7 +15,9 @@ export default defineConfig({
     },
   }),
 
-  integrations: [react(), icon()],
+  integrations: [react(), icon({
+    include: ['ic', 'logos'],
+  })],
 
   vite: {
     plugins: [tailwindcss()],

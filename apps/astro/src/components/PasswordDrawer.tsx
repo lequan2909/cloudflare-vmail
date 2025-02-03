@@ -16,16 +16,16 @@ export default function PasswordDrawer() {
     <Drawer>
       <DrawerTrigger className="mt-4 text-sm text-cyan-600 cursor-pointer">
         <span><Icon icon="ph:password-bold" className="h-6 w-6 text-cyan-600 mx-3 inline-block"></Icon></span>
-        Log in a existing mailbox by a email id
+        Retrieve mailbox using Email ID
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-sm">
           <DrawerHeader>
-            <DrawerTitle>Log in by ID</DrawerTitle>
+            <DrawerTitle>Retrieve Mailbox by ID</DrawerTitle>
             <DrawerDescription>
-              Please save one of your known email IDs to retrieve your email account.
+              Enter your Email ID to retrieve your previously generated mailbox.
               {' '}
-              <span className="text-destructive">If the ID is lost, you will not be able to use the previously generated email account again!</span>
+              <span className="text-destructive">Without this ID, you cannot access your generated email account again!</span>
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4 pb-0">
@@ -46,15 +46,15 @@ export default function PasswordDrawer() {
               }
 
               return toast({
-                title: 'Logged in',
-                description: `You can now use the email account: ${data}`,
+                title: 'Mailbox Retrieved',
+                description: `Your email account has been recovered: ${data}`,
                 action: (
                   <ToastAction altText="Reload page to receive emails" onClick={() => navigate('/')}>Reload Page</ToastAction>
                 ),
               })
             }}
             >
-              Submit
+              Retrieve
 
             </Button>
             <DrawerClose>

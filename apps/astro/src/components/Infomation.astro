@@ -1,5 +1,5 @@
 ---
-import { Icon } from '@iconify/react'
+import { Icon } from 'astro-icon/components'
 ---
 
 <div
@@ -14,19 +14,19 @@ import { Icon } from '@iconify/react'
   </h1>
   <div class="flex flex-col gap-4 text-sm text-primay">
     <div class="flex items-center gap-1.5">
-      <Icon icon="ic:twotone-shield" client:load />
+      <Icon class="w-[2.19em] h-[2.19em]" name="ic:twotone-shield" />
       Privacy Enhanced
     </div>
     <div class="flex items-center gap-1.5">
-      <Icon icon="ic:twotone-timer" client:load />
+      <Icon class="w-[2.19em] h-[2.19em]" name="ic:twotone-timer" />
       1-day expiration
     </div>
     <div class="flex items-center gap-1.5">
-      <Icon icon="ic:twotone-info" client:load />
+      <Icon class="w-[2.19em] h-[2.19em]" name="ic:twotone-info" />
       Mutiple domains
     </div>
     <div class="flex items-center gap-2">
-      <Icon icon="logos:cloudflare-icon" client:load />
+      <Icon class="w-[2.19em] h-[2.19em]" name="logos:cloudflare-icon" />
       100% Runs on Cloudflare
     </div>
   </div>
