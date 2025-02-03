@@ -43,8 +43,8 @@ const Env = Astro.locals.runtime.env
       error
 ? (
         <div class="flex flex-col items-center justify-center text-center p-8">
-          <div class="text-red-500 font-semibold mb-2">Error</div>
-          <div class="text-sm text-muted-foreground">{error}</div>
+          <div class="text-red-500 font-semibold mb-2 text-2xl">Oops, something went wrong.</div>
+          <div class="text-sm">{error}</div>
         </div>
       )
 : (

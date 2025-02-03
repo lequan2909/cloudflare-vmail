@@ -60,6 +60,7 @@
     "@cloudflare/workers-types": "^4.20250129.0",
     "@iconify-json/ic": "^1.2.2",
     "@iconify-json/logos": "^1.2.4",
+    "@iconify-json/mdi": "^1.2.3",
     "@tailwindcss/vite": "^4.0.3",
     "eslint": "^9.19.0",
     "wrangler": "^3.107.2"
