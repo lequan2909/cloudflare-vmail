@@ -33,7 +33,7 @@ export default function PasswordDrawer() {
           </div>
           <DrawerFooter>
             <Button onClick={async () => {
-              const { error, data } = await actions.getEmailByIdOfAEmail({
+              const { error, data } = await actions.getMailboxOfEmail({
                 id,
               })
 

@@ -50,7 +50,7 @@ export async function getEmail(db: DrizzleD1Database, id: string) {
   }
 }
 
-export async function getEmailByIdOfAEmail(db: DrizzleD1Database, id: string) {
+export async function getMailboxOfEmail(db: DrizzleD1Database, id: string) {
   try {
     const result = await db
       .select({ messageTo: emails.messageTo })
