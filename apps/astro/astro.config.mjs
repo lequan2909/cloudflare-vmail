@@ -16,7 +16,11 @@ export default defineConfig({
   }),
 
   integrations: [react(), icon({
-    include: ['ic', 'logos'],
+    include: {
+      ic: ['twotone-shield', 'twotone-info', 'twotone-timer'],
+      mdi: ['arrow-left'],
+      logos: ['cloudflare-icon'],
+    },
   })],
 
   vite: {
