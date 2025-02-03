@@ -1,9 +1,6 @@
 import cloudflare from '@astrojs/cloudflare'
-
 import react from '@astrojs/react'
-
-import tailwind from '@astrojs/tailwind'
-
+import tailwindcss from '@tailwindcss/vite'
 import icon from 'astro-icon'
 
 import { defineConfig } from 'astro/config'
@@ -18,7 +15,9 @@ export default defineConfig({
     },
   }),
 
-  integrations: [react(), tailwind({
-    applyBaseStyles: false,
-  }), icon()],
+  integrations: [react(), icon()],
+
+  vite: {
+    plugins: [tailwindcss()],
+  },
 })

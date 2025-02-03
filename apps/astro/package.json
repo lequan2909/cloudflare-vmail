@@ -16,7 +16,6 @@
     "@astrojs/check": "^0.9.4",
     "@astrojs/cloudflare": "^12.2.1",
     "@astrojs/react": "^4.2.0",
-    "@astrojs/tailwind": "^6.0.0",
     "@hookform/resolvers": "^3.10.0",
     "@iconify/react": "^5.2.0",
     "@marsidev/react-turnstile": "1.0.2",
@@ -49,7 +48,7 @@
     "react-hook-form": "7.50.0",
     "resend": "^4.1.2",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.0.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.3",
     "unique-names-generator": "^4.7.1",
@@ -59,6 +58,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^3.7.3",
     "@cloudflare/workers-types": "^4.20250129.0",
+    "@tailwindcss/vite": "^4.0.3",
     "eslint": "^9.19.0",
     "wrangler": "^3.107.2"
   }
