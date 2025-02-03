@@ -1,4 +1,4 @@
-import type { Email } from 'database/schema';
+import type { Email } from 'database/schema'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function MailItem({ mail: item }: { mail: Email }) {

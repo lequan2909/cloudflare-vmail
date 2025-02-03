@@ -1,13 +1,13 @@
 ---
 import Layout from '@/layouts/Layout.astro'
-import { Icon } from '@iconify/react'
+import { Icon } from 'astro-icon/components'
 import { actions } from 'astro:actions'
 import { format } from 'date-fns'
 import { UserCircleIcon } from 'lucide-react'
 
 const { id } = Astro.params as { id: string }
 
-// eslint-disable-next-line antfu/no-top-level-await
+
 const { data, error } = await Astro.callAction(actions.getEmail, {
   id,
 })
@@ -26,7 +26,7 @@ const Env = Astro.locals.runtime.env
       class="flex text-primary w-fit font-semibold items-center border p-2 rounded-md gap-2 border-border"
 
     >
-      <Icon icon="mdi:arrow-left" client:load />
+      <Icon name="mdi:arrow-left" />
       Back Home
     </a>
 

@@ -1,13 +1,9 @@
 ---
-import { Icon } from '@iconify/react'
+import { GitHubLogoIcon } from '@radix-ui/react-icons'
 import { Button } from './ui/button';
 ---
 
 <Button variant="default">
-  <Icon
-    icon="logos:github-icon"
-    className="[&_path]:!fill-primary-foreground"
-    client:load
-  />
+  <GitHubLogoIcon />
   <div class="ml-1.5 text-sm">Star</div>
 </Button>

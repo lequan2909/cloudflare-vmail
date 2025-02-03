@@ -8,7 +8,7 @@ import Layout from '@/layouts/Layout.astro'
 import { actions } from 'astro:actions'
 
 const savedMailbox = Astro.cookies.get('mailbox')?.json() as MailboxSession
-// eslint-disable-next-line antfu/no-top-level-await
+
 const mails = (await Astro.callAction(actions.getEmailsByMessageToWho, {}))
   ?.data
 
