@@ -1,5 +1,6 @@
 # prod
 dist/
+build/
 
 # dev
 .yarn/
@@ -29,5 +30,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# TypeScript
+*.tsbuildinfo
+.tsbuildinfo
+
+# Astro
+.astro/
+
 # misc
 .DS_Store
+*.tgz
+*.tar.gz
+
+# Testing
+coverage/
+.nyc_output/

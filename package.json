@@ -4,9 +4,30 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm dev:packages & pnpm dev:apps",
+    "dev:packages": "pnpm --filter './packages/*' run dev",
+    "dev:apps": "pnpm --filter './apps/*' --parallel run dev",
+    "build": "pnpm build:packages && pnpm build:apps",
+    "build:packages": "pnpm --filter './packages/*' run build",
+    "build:apps": "pnpm --filter './apps/*' run build",
+    "start": "pnpm --filter './apps/*' --parallel run start",
+    "lint": "pnpm -r run lint || true",
+    "type-check": "tsc --build",
+    "type-check:watch": "tsc --build --watch",
+    "clean": "pnpm -r run clean && rimraf dist .tsbuildinfo",
+    "test": "pnpm -r run test",
+    "deploy": "pnpm build && pnpm -r run deploy"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.3.0",
+    "eslint": "^9.35.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-astro": "^0.14.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "pnpm@10.16.0+sha512.8066e7b034217b700a9a4dbb3a005061d641ba130a89915213a10b3ca4919c19c037bec8066afdc559b89635fdb806b16ea673f2468fbb28aabfa13c53e3f769"
 }

@@ -3,7 +3,12 @@
   "version": "2.0.0",
   "description": "",
   "scripts": {
-    "sqlite": "drizzle-kit generate:sqlite"
+    "dev": "tsc --build --watch",
+    "build": "tsc --build",
+    "clean": "rimraf dist .tsbuildinfo",
+    "sqlite": "drizzle-kit generate:sqlite",
+    "db:generate": "drizzle-kit generate:sqlite",
+    "db:push": "drizzle-kit push:sqlite"
   },
   "keywords": [],
   "author": "",

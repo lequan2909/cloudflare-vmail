@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy",
-    "publish": "wrangler publish",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "log": "wrangler tail"
+    "build": "tsc --build",
+    "deploy": "wrangler deploy",
+    "publish": "wrangler publish",
+    "log": "wrangler tail",
+    "clean": "rimraf dist .tsbuildinfo"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
