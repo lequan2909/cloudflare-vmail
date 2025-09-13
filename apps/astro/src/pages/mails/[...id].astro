@@ -20,31 +20,33 @@ let isAuthorized = false
 const savedMailbox = Astro.cookies.get('mailbox')?.json() as MailboxSession
 
 try {
-  // First, get the email
-  data = await DAO.getEmail(db, id)
-  if (!data) {
-    error = 'Email not found'
+  // Check authorization first before fetching email data
+  if (!savedMailbox) {
+    error = 'Access denied: No mailbox session found'
   } else {
-    // Check if user has a valid mailbox session
-    if (!savedMailbox) {
-      error = 'Access denied: No mailbox session found'
-    } else {
-      try {
-        // Verify JWT token
-        await jose.jwtVerify(
-          savedMailbox.token,
-          encodeJWTSecret(String(Astro.locals.runtime.env.JWT_SECRET))
-        )
-        
+    try {
+      // Verify JWT token
+      await jose.jwtVerify(
+        savedMailbox.token,
+        encodeJWTSecret(String(Astro.locals.runtime.env.JWT_SECRET))
+      )
+      
+      // Get the email only after JWT verification
+      data = await DAO.getEmail(db, id)
+      if (!data) {
+        error = 'Email not found'
+      } else {
         // Check if current mailbox matches email recipient
         if (savedMailbox.mailbox === data.messageTo) {
           isAuthorized = true
         } else {
           error = 'Access denied: You can only view emails sent to your mailbox'
+          // Clear data to prevent any leakage
+          data = null
         }
-      } catch (jwtError) {
-        error = 'Access denied: Invalid session'
       }
+    } catch (jwtError) {
+      error = 'Access denied: Invalid session'
     }
   }
 } catch (e) {
@@ -55,12 +57,12 @@ const Env = Astro.locals.runtime.env
 ---
 
 <Layout
-  title={`${data?.subject || 'Email'} - ${Env.SITE_NAME}`}
+  title={`${isAuthorized && data?.subject ? data.subject : 'Protected Email'} - ${Env.SITE_NAME}`}
   description={String(Env.SITE_DESCRIPTION)}
 >
   <PageHeader
-    title={data?.subject || 'Email'}
-    description={data ? `From ${data.from.name} (${data.from.address})` : 'Email details'}
+    title={isAuthorized && data?.subject ? data.subject : 'Protected Email'}
+    description={isAuthorized && data ? `From ${data.from.name} (${data.from.address})` : 'Email content is protected'}
     showBackButton={true}
     backUrl="/"
   />
@@ -69,17 +71,74 @@ const Env = Astro.locals.runtime.env
     {
       error ? (
         <div class="flex flex-col items-center justify-center text-center p-8">
-          <div class="bg-destructive/10 text-destructive rounded-lg p-6 max-w-md">
-            <div class="font-semibold mb-2 text-xl">
-              {error.includes('Access denied') ? 'Access Denied' : 'Email Not Found'}
-            </div>
-            <div class="text-sm opacity-90">{error}</div>
-            {error.includes('No mailbox session') && (
-              <div class="mt-4">
+          <div class="bg-card border border-border rounded-lg shadow-sm p-6 max-w-lg w-full">
+            {error.includes('Access denied') ? (
+              <div>
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-950/20 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-foreground mb-2">Email Protected</h3>
+                <p class="text-sm text-muted-foreground mb-6">
+                  This email content is protected and can only be viewed by the temporary mailbox owner.
+                </p>
+                
+                <div class="bg-muted/30 rounded-lg p-4 mb-6 text-left">
+                  <h4 class="font-medium text-foreground mb-3">To access this email:</h4>
+                  <ul class="text-sm text-muted-foreground space-y-2">
+                    <li class="flex items-start gap-2">
+                      <span class="text-primary mt-0.5">•</span>
+                      <span>Use the "Retrieve Mailbox" feature on the homepage</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="text-primary mt-0.5">•</span>
+                      <span>Enter your saved Email ID to restore mailbox access</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="text-primary mt-0.5">•</span>
+                      <span>Only the original mailbox owner can view protected content</span>
+                    </li>
+                  </ul>
+                  
+                  <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                    <div class="flex items-start gap-2">
+                      <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <p class="text-xs text-amber-700 dark:text-amber-300">
+                        <strong>Important:</strong> Without your Email ID, you cannot access your temporary mailbox again!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
                 <a 
                   href="/" 
                   class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
                 >
+                  <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  Retrieve Mailbox
+                </a>
+              </div>
+            ) : (
+              <div>
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-foreground mb-2">Email Not Found</h3>
+                <p class="text-sm text-muted-foreground mb-6">{error}</p>
+                <a 
+                  href="/" 
+                  class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  </svg>
                   Go to Inbox
                 </a>
               </div>
