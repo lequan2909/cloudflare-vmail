@@ -1,5 +1,7 @@
 ---
+import { ClientRouter } from 'astro:transitions'
 import '../globals.css'
+import { Dock } from '../components/Dock'
 
 interface Props {
   title: string
@@ -7,28 +9,40 @@ interface Props {
 }
 
 const { title, description } = Astro.props
+const Env = Astro.locals.runtime.env
 ---
 
-<script is:inline data-astro-rerun>
-  function toggleTheme() {
+<script is:inline>
+  function applyTheme() {
     function getThemePreference() {
-      if (
-        typeof localStorage !== 'undefined'
-        && localStorage.getItem('theme')
-      ) {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
         return localStorage.getItem('theme')
       }
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
     }
     const isDark = getThemePreference() === 'dark'
     document.documentElement.classList[isDark ? 'add' : 'remove']('dark')
   }
 
-  toggleTheme()
+  // Apply theme immediately on page load
+  applyTheme()
 
-  document.addEventListener('astro:before-swap', () => toggleTheme())
+  // Apply theme before swap to prevent flash
+  document.addEventListener('astro:before-swap', (event) => {
+    // Apply theme to the new document before it's swapped
+    const newDocument = event.newDocument
+    function getThemePreference() {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+        return localStorage.getItem('theme')
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    }
+    const isDark = getThemePreference() === 'dark'
+    newDocument.documentElement.classList[isDark ? 'add' : 'remove']('dark')
+  })
+
+  // Ensure theme is applied after page load
+  document.addEventListener('astro:page-load', applyTheme)
 </script>
 
 <html lang="en">
@@ -38,8 +52,181 @@ const { title, description } = Astro.props
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" href="/favicon.ico" />
     <title>{title}</title>
+    <ClientRouter />
   </head>
   <body>
     <slot />
+    <div transition:name="dock">
+      <Dock siteName={String(Env.SITE_NAME)} client:load />
+    </div>
   </body>
 </html>
+
+<style is:global>
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.6s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Header fade animations */
+  @keyframes header-fade-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes header-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Content slide animations - more subtle */
+  @keyframes content-slide-out {
+    from {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes content-slide-in {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Fade animations for smoother transitions */
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Header transition styles */
+  ::view-transition-old(page-header),
+  ::view-transition-new(page-header) {
+    animation-duration: 0.4s;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+  }
+
+  ::view-transition-old(page-header) {
+    animation-name: header-fade-out;
+  }
+
+  ::view-transition-new(page-header) {
+    animation-name: header-fade-in;
+  }
+
+  /* Main content transition styles */
+  ::view-transition-old(main-content),
+  ::view-transition-new(main-content) {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+  }
+
+  ::view-transition-old(main-content) {
+    animation-name: content-slide-out;
+  }
+
+  ::view-transition-new(main-content) {
+    animation-name: content-slide-in;
+  }
+
+  /* Dock - persist without animation */
+  ::view-transition-old(dock),
+  ::view-transition-new(dock) {
+    animation: none !important;
+  }
+
+  /* Root transition - subtle fade */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.3s;
+    animation-timing-function: ease-in-out;
+  }
+
+  ::view-transition-old(root) {
+    animation-name: fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: fade-in;
+  }
+
+  /* Inbox to email detail transitions */
+  ::view-transition-old(inbox-container),
+  ::view-transition-new(email-detail) {
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::view-transition-old(inbox-container) {
+    animation-name: content-slide-out;
+  }
+
+  ::view-transition-new(email-detail) {
+    animation-name: content-slide-in;
+  }
+
+  /* Email detail to inbox transitions */
+  ::view-transition-old(email-detail),
+  ::view-transition-new(inbox-container) {
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::view-transition-old(email-detail) {
+    animation-name: content-slide-out;
+  }
+
+  ::view-transition-new(inbox-container) {
+    animation-name: content-slide-in;
+  }
+
+  /* Respect user's motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.2s !important;
+      animation-name: fade-out !important;
+    }
+
+    ::view-transition-new(*) {
+      animation-name: fade-in !important;
+    }
+  }
+</style>

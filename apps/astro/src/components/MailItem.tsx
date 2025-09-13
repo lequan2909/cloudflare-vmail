@@ -6,23 +6,35 @@ export default function MailItem({ mail: item }: { mail: Email }) {
     <a
       href={`/mails/${item.id}`}
       key={item.id}
-      className="flex flex-col items-start text-primary gap-2 mb-1 rounded-lg border border-border p-3 text-left text-sm transition-all hover:bg-primary-foreground"
+      className="block p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
     >
-      <div className="flex w-full flex-col gap-1">
-        <div className="flex items-center">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="font-semibold">{item.from.name}</div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-xs font-medium text-primary">
+                {item.from.name?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+            </div>
+            <div className="font-medium text-card-foreground text-sm">
+              {item.from.name || item.from.address}
+            </div>
           </div>
-          <div className="ml-auto text-xs">
+          <div className="text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(item.date || item.createdAt), {
               addSuffix: true,
             })}
           </div>
         </div>
-        <div className="text-xs font-medium">{item.subject}</div>
-      </div>
-      <div className="line-clamp-2 text-xs text-primary font-normal w-full">
-        {item.text || item.html || ''.substring(0, 300)}
+
+        <div className="space-y-1">
+          <div className="font-medium text-sm text-card-foreground line-clamp-1">
+            {item.subject || 'No subject'}
+          </div>
+          <div className="text-xs text-muted-foreground line-clamp-2">
+            {item.text || item.html?.replace(/<[^>]*>/g, '') || 'No content'}
+          </div>
+        </div>
       </div>
     </a>
   )

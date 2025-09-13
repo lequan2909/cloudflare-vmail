@@ -17,39 +17,45 @@ const savedMailbox = Astro.cookies.get('mailbox')?.json() as MailboxSession
 
 // eslint-disable-next-line antfu/no-top-level-await
 const verifed = await jose
-  .jwtVerify(
-    savedMailbox.token,
-    encodeJWTSecret(Astro.locals.runtime.env.JWT_SECRET),
-  )
+  .jwtVerify(savedMailbox.token, encodeJWTSecret(Astro.locals.runtime.env.JWT_SECRET))
   .then(() => true)
   .catch(() => false)
 ---
 
-<div class="w-full md:max-w-[350px] mb-4">
-  <div class="mb-4 font-semibold text-sm">Email Address</div>
+<div class="space-y-4">
   {
     verifed && (
-      <div class="flex items-center mb-6 text-primary bg-secondary backdrop-blur-xl shadow-inner px-4 py-4 rounded-md w-full border-border border">
-        <span class="truncate">{savedMailbox.mailbox}</span>
-        <CopyButton
-          client:load
-          content={savedMailbox.mailbox}
-          className="p-1 rounded-md ml-auto transition-all duration-200"
-        />
+      <div class="space-y-3">
+        <label class="text-sm font-medium text-card-foreground">Your Email Address</label>
+        <div class="flex items-center gap-2 p-3 bg-muted rounded-md border border-border">
+          <span class="flex-1 truncate text-sm font-mono text-muted-foreground">
+            {savedMailbox.mailbox}
+          </span>
+          <CopyButton
+            client:load
+            content={savedMailbox.mailbox}
+            className="p-1.5 rounded-md hover:bg-background transition-colors"
+          />
+        </div>
       </div>
     )
   }
+
   {
     !verifed && (
-      <h1 class="text-destructive font-black text-xl mb-4">
-        Failed to verify your mailbox. Your mailbox token may be expired or
-        invalid.
-      </h1>
+      <div class="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+        <div class="text-sm text-destructive">
+          <strong>Verification Failed:</strong> Your mailbox token may be expired or invalid.
+        </div>
+      </div>
     )
   }
-  <ExitButton client:only="react" />
-  <div class="grid w-full grid-cols-2 gap-2">
-    <SenderButton client:only="react" />
-    <DeleteEvereyThingButton isDisabled={!hasMails} client:only="react" />
+
+  <div class="space-y-2">
+    <ExitButton client:only="react" />
+    <div class="grid grid-cols-2 gap-2">
+      <SenderButton client:only="react" />
+      <DeleteEvereyThingButton isDisabled={!hasMails} client:only="react" />
+    </div>
   </div>
 </div>

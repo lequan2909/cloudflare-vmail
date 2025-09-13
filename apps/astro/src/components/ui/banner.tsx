@@ -17,7 +17,7 @@ function Grid({
 
   return (
     <svg
-      className={cn('pointer-events-none absolute inset-0 text-black/10', className)}
+      className={cn('pointer-events-none absolute inset-0 text-muted-foreground/10', className)}
       width="100%"
       height="100%"
     >
@@ -53,46 +53,92 @@ interface BannerProps {
     onClick: () => void
   }
   learnMoreUrl?: string
+  variant?: 'default' | 'warning' | 'destructive'
 }
 
-export function Banner({ show, onHide, icon, title, action, learnMoreUrl }: BannerProps) {
+export function Banner({
+  show,
+  onHide,
+  icon,
+  title,
+  action,
+  learnMoreUrl,
+  variant = 'default',
+}: BannerProps) {
   if (!show) return null
 
+  const variants = {
+    default: {
+      container: 'border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10',
+      iconContainer: 'border-primary/30 bg-background/80',
+      text: 'text-foreground',
+      link: 'text-muted-foreground hover:text-foreground',
+      button: 'border-primary/30 text-foreground hover:bg-primary/10',
+      closeButton: 'text-muted-foreground hover:text-foreground',
+      grid: 'text-muted-foreground/20',
+    },
+    warning: {
+      container:
+        'border-amber-500/20 bg-gradient-to-r from-amber-50/80 to-yellow-50/80 dark:from-amber-950/20 dark:to-yellow-950/20',
+      iconContainer: 'border-amber-500/30 bg-background/80',
+      text: 'text-foreground',
+      link: 'text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300',
+      button:
+        'border-amber-500/30 text-amber-800 hover:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20',
+      closeButton:
+        'text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300',
+      grid: 'text-amber-500/20',
+    },
+    destructive: {
+      container: 'border-destructive/20 bg-gradient-to-r from-destructive/5 to-destructive/10',
+      iconContainer: 'border-destructive/30 bg-background/80',
+      text: 'text-foreground',
+      link: 'text-destructive hover:text-destructive/80',
+      button: 'border-destructive/30 text-destructive hover:bg-destructive/10',
+      closeButton: 'text-destructive hover:text-destructive/80',
+      grid: 'text-destructive/20',
+    },
+  }
+
+  const variantStyles = variants[variant]
+
   return (
-    <div className="relative isolate flex flex-col justify-between gap-3 overflow-hidden rounded-lg border border-green-600/15 bg-gradient-to-r from-lime-100/80 to-emerald-100/80 py-3 pl-4 pr-12 sm:flex-row sm:items-center sm:py-2">
+    <div
+      className={cn(
+        'relative isolate flex flex-col justify-between gap-3 overflow-hidden rounded-lg border py-3 pl-4 pr-12 sm:flex-row sm:items-center sm:py-2',
+        variantStyles.container
+      )}
+    >
       <Grid
         cellSize={13}
         patternOffset={[0, -1]}
-        className="text-black/30 mix-blend-overlay [mask-image:linear-gradient(to_right,black,transparent)] md:[mask-image:linear-gradient(to_right,black_60%,transparent)]"
+        className={cn(
+          'mix-blend-overlay [mask-image:linear-gradient(to_right,black,transparent)] md:[mask-image:linear-gradient(to_right,black_60%,transparent)]',
+          variantStyles.grid
+        )}
       />
 
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="hidden rounded-full border border-green-600/50 bg-white/50 p-1 shadow-[inset_0_0_1px_1px_#fff] sm:block">
+          <div
+            className={cn(
+              'hidden rounded-full border p-1 shadow-sm sm:block',
+              variantStyles.iconContainer
+            )}
+          >
             {icon}
           </div>
         )}
-        <p className="text-sm text-gray-900">
-          {title}
-          {learnMoreUrl && (
-            <>
-              {' '}
-              <a
-                href={learnMoreUrl}
-                target="_blank"
-                className="text-gray-700 underline transition-colors hover:text-black"
-              >
-                Learn more
-              </a>
-            </>
-          )}
-        </p>
+        <p className={cn('text-sm', variantStyles.text)}>{title}</p>
       </div>
 
       <div className="flex items-center sm:-my-1">
         <button
           type="button"
-          className="whitespace-nowrap rounded-md border border-green-700/50 px-3 py-1 text-sm text-gray-800 transition-colors hover:bg-green-500/10"
+          className={cn(
+            'whitespace-nowrap rounded-md border px-3 py-1 text-sm transition-colors',
+            variantStyles.button
+          )}
           onClick={action.onClick}
         >
           {action.label}
@@ -101,7 +147,10 @@ export function Banner({ show, onHide, icon, title, action, learnMoreUrl }: Bann
 
       <button
         type="button"
-        className="absolute inset-y-0 right-2.5 p-1 text-sm text-green-700 underline transition-colors hover:text-green-900"
+        className={cn(
+          'absolute inset-y-0 right-2.5 p-1 text-sm transition-colors',
+          variantStyles.closeButton
+        )}
         onClick={onHide}
       >
         <Cross2Icon className="h-[18px] w-[18px]" />

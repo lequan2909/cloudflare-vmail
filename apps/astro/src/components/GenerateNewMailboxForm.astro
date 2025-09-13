@@ -12,36 +12,34 @@ const turnstileSiteKey = Env.TURNSTILE_SITE_KEY
 const mailDomains = Env.MAIL_DOMAIN.split(',')
 ---
 
-<div>
-  <form
-    action={actions.generateNewMailbox}
-    method="POST"
-    class="w-full md:max-w-[350px]"
-
-  >
-    <div class="mb-3 font-semibold">Select Domain</div>
-    {mailDomains.length && <SelectDomain domains={mailDomains} client:load />}
-
-    <div class="mb-3 font-semibold">Bot Check</div>
-    <div class="[&_iframe]:w-full! h-[65px] max-w-[300px] mb-4">
-      <Turnstile siteKey={turnstileSiteKey} client:only="react" />
+<div class="space-y-6">
+  <form action={actions.generateNewMailbox} method="POST" class="space-y-4">
+    <div class="space-y-2">
+      <label class="text-sm font-medium text-card-foreground">Select Domain</label>
+      {mailDomains.length && <SelectDomain domains={mailDomains} client:load />}
     </div>
 
-    <Button
-      type="submit"
-      variant="default"
-      className="py-2.5 rounded-md w-full hover:opacity-90 disabled:cursor-not-allowed disabled:bg-zinc-500max-w-[300px]"
-    >Create a New Mailbox</Button
-    >
+    <div class="space-y-2">
+      <label class="text-sm font-medium text-card-foreground">Bot Check</label>
+      <div class="[&_iframe]:w-full! h-[65px] rounded-md overflow-hidden">
+        <Turnstile siteKey={turnstileSiteKey} client:only="react" />
+      </div>
+    </div>
+
+    <Button type="submit" variant="default" className="w-full"> Create a New Mailbox </Button>
   </form>
 
-  <div>
-    {
-      isInputError(result?.error) && (
-        <div class="text-red-500">Action error: {result.error.message}</div>
-      )
-    }
-  </div>
+  {
+    isInputError(result?.error) && (
+      <div class="rounded-md border border-destructive/50 bg-destructive/10 p-3">
+        <div class="text-sm text-destructive">
+          <strong>Error:</strong> {result.error.message}
+        </div>
+      </div>
+    )
+  }
 
-  <PasswordDrawer client:load />
+  <div class="pt-4 border-t border-border">
+    <PasswordDrawer client:load />
+  </div>
 </div>

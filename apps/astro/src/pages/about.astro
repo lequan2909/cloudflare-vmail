@@ -1,47 +1,73 @@
 ---
 import Star from '@/components/Star.astro'
+import PageHeader from '@/components/PageHeader.astro'
 import Layout from '@/layouts/Layout.astro'
 
 const Env = Astro.locals.runtime.env
 ---
 
-<Layout
-  title={`About our service - ${Env.SITE_NAME}`}
-  description={Env.SITE_DESCRIPTION}
+<Layout title={`About our service - ${Env.SITE_NAME}`} description={String(Env.SITE_DESCRIPTION)}>
+  <PageHeader
+    title={`About ${String(Env.SITE_NAME)}`}
+    description="Learn more about our virtual temporary email service"
+    showBackButton={true}
+  />
 
->
-  <div class="mx-10 mt-24 text-primary px-7 py-10 of-x-hidden">
-    <div class="max-w-[1400px]">
-      <h1 class="text-4xl font-bold" id="about">
-        About{' '}
-      </h1>
-      <p class="mt-8">
-        <strong>{Env.SITE_NAME}</strong> is a Virtual temporary email service.
-      </p>
-      <Star /><span class="ml-4">Support my work by giving me a star.</span>
-      <p class="mt-4">
-        You can get a temporary email without revealing any personal
-        information, which greatly protects your privacy.{' '}
-      </p>
-      <p class="mt-4">
-        It supports selecting one domain names, making it convenient for you to
-        use in different scenarios.{' '}
-      </p>
-      <p class="mt-4">
-        100% running on the <strong>Cloudflare </strong> network, providing you with
-        a super-fast experience.{' '}
+  <main class="max-w-4xl mx-auto px-6 py-6" transition:name="main-content">
+    <div
+      class="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:text-primary/80"
+    >
+      <div class="bg-muted/30 rounded-lg p-8">
+        <h2 class="text-xl font-semibold mb-6 text-foreground">About Our Service</h2>
+        <p class="mt-8">
+          <strong>{Env.SITE_NAME}</strong> is a privacy-focused virtual temporary email service that
+          requires no registration. Get temporary email addresses without revealing any personal information,
+          greatly protecting your privacy and keeping your real email safe from spam.
+        </p>
+        <div class="flex items-center gap-2 mt-4">
+          <Star />
+          <span class="text-sm text-muted-foreground">
+            Support our work by giving us a star on GitHub
+          </span>
+        </div>
 
-        We use Cloudflare D1 to store email data, which ensures the security and
-        reliability of your emails. You can check the <a href="/privacy">Privacy Policy</a
-        > for more details
-      </p>
+        <h2 class="mt-8 text-2xl font-bold">Key Features</h2>
 
-      <p class="mt-4">
-        Misuse of the temporary email service not only violates our terms of
-        service but can also impact the normal use of other users. We encourage
-        each user to use our services responsibly to ensure that resources are
-        allocated and used appropriately.
-      </p>
+        <h3 class="mt-6 text-xl font-semibold">🔒 Privacy Enhanced</h3>
+        <p class="mt-4">
+          Get temporary email addresses without revealing any personal information, greatly
+          protecting your privacy and keeping your real email safe from spam.
+        </p>
+
+        <h3 class="mt-6 text-xl font-semibold">🌐 Multiple Domains</h3>
+        <p class="mt-4">
+          Choose from multiple domain names, making it convenient for you to use in different
+          scenarios and applications.
+        </p>
+
+        <h3 class="mt-6 text-xl font-semibold">⚡ Cloudflare Powered</h3>
+        <p class="mt-4">
+          100% running on the <strong>Cloudflare</strong> network, providing you with super-fast performance
+          and global availability. We use Cloudflare D1 to store email data, ensuring security and reliability.
+        </p>
+
+        <h3 class="mt-6 text-xl font-semibold">🛡️ Secure Storage</h3>
+        <p class="mt-4">
+          We use Cloudflare D1 to store email data, ensuring security and reliability. You can check
+          our <a href="/privacy" class="underline">Privacy Policy</a> for more details.
+        </p>
+
+        <h2 class="mt-8 text-2xl font-bold">Responsible Usage</h2>
+        <div
+          class="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-4"
+        >
+          <p class="text-amber-700 dark:text-amber-300">
+            <strong>⚠️ Important:</strong> Misuse of the temporary email service not only violates our
+            terms of service but can also impact the normal use of other users. We encourage each user
+            to use our services responsibly to ensure that resources are allocated and used appropriately.
+          </p>
+        </div>
+      </div>
     </div>
-  </div>
+  </main>
 </Layout>

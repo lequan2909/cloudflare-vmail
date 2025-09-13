@@ -4,37 +4,66 @@ import GenerateNewMailboxForm from '@/components/GenerateNewMailboxForm.astro'
 import Inbox from '@/components/Inbox'
 import Infomation from '@/components/Infomation.astro'
 import LoggedInMailboxForm from '@/components/LoggedInMailboxForm.astro'
+import { DomainNoticeBanner } from '@/components/DomainNoticeBanner'
+import PageHeader from '@/components/PageHeader.astro'
 import Layout from '@/layouts/Layout.astro'
 import { actions } from 'astro:actions'
 
 const savedMailbox = Astro.cookies.get('mailbox')?.json() as MailboxSession
 
-const mails = (await Astro.callAction(actions.getEmailsByMessageToWho, {}))
-  ?.data
+const mails = (await Astro.callAction(actions.getEmailsByMessageToWho, {}))?.data
 
 const Env = Astro.locals.runtime.env
 ---
 
-<Layout title={`Inbox - ${Env.SITE_NAME}`} description={Env.SITE_DESCRIPTION}>
-  <div
-    class="h-full flex flex-col gap-4 md:flex-row justify-center items-start mt-24 mx-6 md:mx-10"
+<Layout title={`Inbox - ${Env.SITE_NAME}`} description={String(Env.SITE_DESCRIPTION)}>
+  <PageHeader
+    title={String(Env.SITE_NAME)}
+    description="Privacy-friendly temporary email service"
+  />
 
-  >
-    <div
-      class="flex flex-col text-primary items-start w-full md:w-[350px] mx-auto gap-2"
-
-    >
-      <Infomation />
-
-      {!savedMailbox?.mailbox && <GenerateNewMailboxForm />}
-      {
-        savedMailbox?.mailbox && (
-          <LoggedInMailboxForm hasMails={(mails?.length || 0) >= 1} />
-        )
-      }
+  <main class="max-w-7xl mx-auto px-6 py-6" transition:name="main-content">
+    <!-- Service Notice Banner -->
+    <div class="mb-6">
+      <DomainNoticeBanner client:load />
     </div>
-    <div class="w-full flex-1 overflow-hidden">
-      <Inbox mails={mails || []} client:load />
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left Sidebar - Information & Controls -->
+      <div class="lg:col-span-1 space-y-6">
+        <Infomation />
+
+        <!-- Mailbox Management Card -->
+        <div class="bg-card border border-border rounded-lg shadow-sm" data-mailbox-form>
+          <div class="p-6">
+            {
+              !savedMailbox?.mailbox && (
+                <div>
+                  <h3 class="text-lg font-semibold text-card-foreground mb-4">Create Mailbox</h3>
+                  <GenerateNewMailboxForm />
+                </div>
+              )
+            }
+            {
+              savedMailbox?.mailbox && (
+                <div>
+                  <h3 class="text-lg font-semibold text-card-foreground mb-4">Your Mailbox</h3>
+                  <LoggedInMailboxForm hasMails={(mails?.length || 0) >= 1} />
+                </div>
+              )
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Content - Inbox -->
+      <div class="lg:col-span-2">
+        <div
+          class="bg-card border border-border rounded-lg shadow-sm h-full min-h-[600px] p-6"
+          transition:name="inbox-container"
+        >
+          <Inbox mails={mails || []} client:load />
+        </div>
+      </div>
     </div>
-  </div>
+  </main>
 </Layout>
