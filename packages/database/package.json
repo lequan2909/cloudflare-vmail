@@ -11,7 +11,8 @@
     "clean": "rimraf dist .tsbuildinfo",
     "sqlite": "drizzle-kit generate:sqlite",
     "db:generate": "drizzle-kit generate:sqlite",
-    "db:push": "drizzle-kit push:sqlite"
+    "db:push": "drizzle-kit push:sqlite",
+    "db:migrate": "drizzle-kit migrate"
   },
   "keywords": [],
   "author": "",

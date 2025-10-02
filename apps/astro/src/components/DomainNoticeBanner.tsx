@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Banner } from './ui/banner'
 
 export function DomainNoticeBanner() {
@@ -24,14 +24,15 @@ export function DomainNoticeBanner() {
     }
   }
 
-  if (!show) return null
+  if (!show)
+    return null
 
   return (
     <Banner
       show={show}
       onHide={handleHide}
       variant="warning"
-      icon={
+      icon={(
         <svg
           className="h-4 w-4"
           fill="none"
@@ -46,17 +47,20 @@ export function DomainNoticeBanner() {
           />
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 15.75h.007v.008H12v-.008Z" />
         </svg>
-      }
-      title={
+      )}
+      title={(
         <>
-          <strong>服务通知：</strong>临时邮箱域名{' '}
+          <strong>服务通知：</strong>
+          临时邮箱域名
+          {' '}
           <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono text-muted-foreground">
             What-the-fuck.sbs
-          </code>{' '}
+          </code>
+          {' '}
           已停止服务。
           由于域名过期且注册商收回，该域名下的邮箱地址将无法接收新邮件。我们正在努力恢复服务，请使用其他可用域名。
         </>
-      }
+      )}
       action={{
         label: '查看可用域名',
         onClick: handleViewDomains,

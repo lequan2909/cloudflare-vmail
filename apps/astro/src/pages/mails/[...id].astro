@@ -1,15 +1,15 @@
 ---
-import Layout from '@/layouts/Layout.astro'
-import PageHeader from '@/components/PageHeader.astro'
+import type { MailboxSession } from '@/actions'
 import * as DAO from 'database/dao'
 import { getCloudflareD1 } from 'database/db'
-import type { MailboxSession } from '@/actions'
-import { encodeJWTSecret } from '@/lib/utils'
 import * as jose from 'jose'
-import { OTPDisplay } from '@/components/OTPDisplay'
-import { extractOTP } from '@/lib/otp'
 import { EmailHeaders } from '@/components/EmailHeaders'
 import { EmailViewer } from '@/components/EmailViewer'
+import { OTPDisplay } from '@/components/OTPDisplay'
+import PageHeader from '@/components/PageHeader.astro'
+import Layout from '@/layouts/Layout.astro'
+import { extractOTP } from '@/lib/otp'
+import { encodeJWTSecret } from '@/lib/utils'
 
 const { id } = Astro.params as { id: string }
 
@@ -27,19 +27,21 @@ try {
   // Check authorization first before fetching email data
   if (!savedMailbox) {
     error = 'Access denied: No mailbox session found'
-  } else {
+  }
+ else {
     try {
       // Verify JWT token
       await jose.jwtVerify(
         savedMailbox.token,
-        encodeJWTSecret(String(Astro.locals.runtime.env.JWT_SECRET))
+        encodeJWTSecret(String(Astro.locals.runtime.env.JWT_SECRET)),
       )
 
       // Get the email only after JWT verification
       data = await DAO.getEmail(db, id)
       if (!data) {
         error = 'Email not found'
-      } else {
+      }
+ else {
         // Check if current mailbox matches email recipient
         if (savedMailbox.mailbox === data.messageTo) {
           isAuthorized = true
@@ -47,17 +49,20 @@ try {
           // Extract OTP codes from email content
           const content = data.html || data.text || ''
           otpCodes = extractOTP(content)
-        } else {
+        }
+ else {
           error = 'Access denied: You can only view emails sent to your mailbox'
           // Clear data to prevent any leakage
           data = null
         }
       }
-    } catch (jwtError) {
+    }
+ catch (jwtError) {
       error = 'Access denied: Invalid session'
     }
   }
-} catch (e) {
+}
+ catch (e) {
   error = e instanceof Error ? e.message : 'Failed to fetch email'
 }
 
@@ -80,7 +85,8 @@ const Env = Astro.locals.runtime.env
       error ? (
         <div class="flex flex-col items-center justify-center text-center p-8">
           <div class="bg-card border border-border rounded-lg shadow-sm p-6 max-w-lg w-full">
-            {error.includes('Access denied') ? (
+            {error.includes('Access denied')
+? (
               <div>
                 <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-950/20 flex items-center justify-center">
                   <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,7 +97,7 @@ const Env = Astro.locals.runtime.env
                 <p class="text-sm text-muted-foreground mb-6">
                   This email content is protected and can only be viewed by the temporary mailbox owner.
                 </p>
-                
+
                 <div class="bg-muted/30 rounded-lg p-4 mb-6 text-left">
                   <h4 class="font-medium text-foreground mb-3">To access this email:</h4>
                   <ul class="text-sm text-muted-foreground space-y-2">
@@ -108,7 +114,7 @@ const Env = Astro.locals.runtime.env
                       <span>Only the original mailbox owner can view protected content</span>
                     </li>
                   </ul>
-                  
+
                   <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
                     <div class="flex items-start gap-2">
                       <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -120,9 +126,9 @@ const Env = Astro.locals.runtime.env
                     </div>
                   </div>
                 </div>
-                
-                <a 
-                  href="/" 
+
+                <a
+                  href="/"
                   class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
                 >
                   <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,7 +137,8 @@ const Env = Astro.locals.runtime.env
                   Retrieve Mailbox
                 </a>
               </div>
-            ) : (
+            )
+: (
               <div>
                 <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
                   <svg class="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,8 +147,8 @@ const Env = Astro.locals.runtime.env
                 </div>
                 <h3 class="text-xl font-semibold text-foreground mb-2">Email Not Found</h3>
                 <p class="text-sm text-muted-foreground mb-6">{error}</p>
-                <a 
-                  href="/" 
+                <a
+                  href="/"
                   class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
                 >
                   <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

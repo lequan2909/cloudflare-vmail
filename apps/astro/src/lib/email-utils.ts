@@ -6,33 +6,35 @@ const DANGEROUS_TAGS = ['script', 'iframe', 'object', 'embed', 'link', 'style', 
 const DANGEROUS_PROTOCOLS = ['javascript:', 'data:', 'vbscript:', 'file:']
 
 export function sanitizeHtml(html: string): string {
-  if (!html) return ''
+  if (!html)
+    return ''
 
   // 创建临时容器
   const temp = document.createElement('div')
   temp.innerHTML = html
 
   // 移除危险标签
-  DANGEROUS_TAGS.forEach(tag => {
+  DANGEROUS_TAGS.forEach((tag) => {
     const elements = temp.querySelectorAll(tag)
     elements.forEach(el => el.remove())
   })
 
   // 处理所有链接
   const links = temp.querySelectorAll('a')
-  links.forEach(link => {
+  links.forEach((link) => {
     const href = link.getAttribute('href') || ''
 
     // 检查危险协议
     const isDangerous = DANGEROUS_PROTOCOLS.some(protocol =>
-      href.toLowerCase().startsWith(protocol)
+      href.toLowerCase().startsWith(protocol),
     )
 
     if (isDangerous) {
       link.removeAttribute('href')
       link.style.textDecoration = 'line-through'
       link.title = 'Dangerous link removed'
-    } else {
+    }
+    else {
       // 添加安全属性
       link.setAttribute('target', '_blank')
       link.setAttribute('rel', 'noopener noreferrer nofollow')
@@ -41,8 +43,8 @@ export function sanitizeHtml(html: string): string {
 
   // 移除所有 on* 事件处理器
   const allElements = temp.querySelectorAll('*')
-  allElements.forEach(el => {
-    Array.from(el.attributes).forEach(attr => {
+  allElements.forEach((el) => {
+    Array.from(el.attributes).forEach((attr) => {
       if (attr.name.startsWith('on')) {
         el.removeAttribute(attr.name)
       }
@@ -51,18 +53,19 @@ export function sanitizeHtml(html: string): string {
 
   // 处理图片 - 添加懒加载
   const images = temp.querySelectorAll('img')
-  images.forEach(img => {
+  images.forEach((img) => {
     const src = img.getAttribute('src') || ''
 
     // 检查危险协议
     const isDangerous = DANGEROUS_PROTOCOLS.some(protocol =>
-      src.toLowerCase().startsWith(protocol)
+      src.toLowerCase().startsWith(protocol),
     )
 
     if (isDangerous) {
       img.removeAttribute('src')
       img.alt = 'Dangerous image removed'
-    } else {
+    }
+    else {
       img.setAttribute('loading', 'lazy')
       img.setAttribute('decoding', 'async')
       // 可选：添加referrerpolicy
@@ -78,7 +81,7 @@ export function sanitizeHtml(html: string): string {
  */
 export function buildRawMime(email: {
   id?: string
-  from?: { name?: string; address: string }
+  from?: { name?: string, address: string }
   messageTo?: string
   subject?: string
   date?: string
@@ -89,20 +92,24 @@ export function buildRawMime(email: {
   const lines: string[] = []
 
   // 基本头部
-  if (email.messageId) lines.push(`Message-ID: ${email.messageId}`)
-  if (email.date) lines.push(`Date: ${email.date}`)
+  if (email.messageId)
+    lines.push(`Message-ID: ${email.messageId}`)
+  if (email.date)
+    lines.push(`Date: ${email.date}`)
   if (email.from) {
     const fromName = email.from.name ? `${email.from.name} <${email.from.address}>` : email.from.address
     lines.push(`From: ${fromName}`)
   }
-  if (email.messageTo) lines.push(`To: ${email.messageTo}`)
-  if (email.subject) lines.push(`Subject: ${email.subject}`)
+  if (email.messageTo)
+    lines.push(`To: ${email.messageTo}`)
+  if (email.subject)
+    lines.push(`Subject: ${email.subject}`)
 
   lines.push('MIME-Version: 1.0')
 
   // 如果同时有 HTML 和纯文本，使用 multipart
   if (email.html && email.text) {
-    const boundary = '----boundary_' + Date.now()
+    const boundary = `----boundary_${Date.now()}`
     lines.push(`Content-Type: multipart/alternative; boundary="${boundary}"`)
     lines.push('')
     lines.push(`--${boundary}`)
@@ -116,11 +123,13 @@ export function buildRawMime(email: {
     lines.push(email.html || '')
     lines.push('')
     lines.push(`--${boundary}--`)
-  } else if (email.html) {
+  }
+  else if (email.html) {
     lines.push('Content-Type: text/html; charset=utf-8')
     lines.push('')
     lines.push(email.html)
-  } else {
+  }
+  else {
     lines.push('Content-Type: text/plain; charset=utf-8')
     lines.push('')
     lines.push(email.text || '')
@@ -136,7 +145,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
     return true
-  } catch (err) {
+  }
+  catch {
     // 降级方案
     const textarea = document.createElement('textarea')
     textarea.value = text

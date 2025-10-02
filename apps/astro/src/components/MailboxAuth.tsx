@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { actions } from 'astro:actions'
-import { LogIn, Mail, KeyRound, Lock } from 'lucide-react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
+import { KeyRound, Lock, LogIn, Mail } from 'lucide-react'
+import { useState } from 'react'
 import { Alert, AlertDescription } from './ui/alert'
+import { Button } from './ui/button'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from './ui/dialog'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 
 export function MailboxAuth() {
   const [open, setOpen] = useState(false)
@@ -34,13 +34,16 @@ export function MailboxAuth() {
 
       if (loginError) {
         setError(loginError.message)
-      } else {
+      }
+      else {
         // Success - reload page
         window.location.href = '/'
       }
-    } catch (err) {
+    }
+    catch {
       setError('Login failed. Please try again.')
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -97,7 +100,7 @@ export function MailboxAuth() {
                 type="email"
                 placeholder="your@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className="pl-10"
                 required
                 autoFocus
@@ -112,7 +115,7 @@ export function MailboxAuth() {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
             />
           </div>

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { actions } from 'astro:actions'
-import { Mail, MailOpen, Circle } from 'lucide-react'
+import { Circle, Mail, MailOpen } from 'lucide-react'
 import { Card, CardContent } from './ui/card'
 
 export function MailboxStats() {
@@ -13,7 +13,8 @@ export function MailboxStats() {
     refetchInterval: 30000,
   })
 
-  if (!stats) return null
+  if (!stats)
+    return null
 
   return (
     <div className="grid grid-cols-3 gap-3">

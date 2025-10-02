@@ -1,8 +1,8 @@
 'use client'
-import React from 'react'
-import { Home, Info, Shield, FileText, Github, Sun, Moon, Sparkles, Code } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { Code, FileText, Github, Home, Info, Moon, Shield, Sparkles, Sun } from 'lucide-react'
+import React from 'react'
+import { cn } from '@/lib/utils'
 
 interface DockProps {
   siteName?: string
@@ -67,7 +67,7 @@ export function Dock({ siteName = 'VMails' }: DockProps) {
 
         {/* Navigation Items */}
         <div className="flex items-center gap-1">
-          {dockItems.map((item) => (
+          {dockItems.map(item => (
             <DockItem
               key={item.href}
               href={item.href}
@@ -88,11 +88,13 @@ export function Dock({ siteName = 'VMails' }: DockProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {theme === 'dark' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
+            {theme === 'dark'
+              ? (
+                  <Sun className="h-5 w-5" />
+                )
+              : (
+                  <Moon className="h-5 w-5" />
+                )}
           </motion.button>
         </div>
       </motion.div>
@@ -125,7 +127,7 @@ function DockItem({ href, icon: Icon, label, external, isActive }: DockItemProps
           'flex items-center justify-center p-2.5 rounded-xl transition-colors',
           isActive
             ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
         )}
         title={label}
         whileHover={{ scale: 1.05, y: -2 }}

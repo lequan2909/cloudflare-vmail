@@ -1,9 +1,8 @@
-import { useState } from 'react'
 import { actions } from 'astro:actions'
-import { Lock, Shield, AlertCircle } from 'lucide-react'
+import { AlertCircle, Lock, Shield } from 'lucide-react'
+import { useState } from 'react'
+import { Alert, AlertDescription } from './ui/alert'
 import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from './ui/dialog'
-import { Alert, AlertDescription } from './ui/alert'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
 
 interface ClaimMailboxDialogProps {
   mailboxAddress: string
@@ -49,13 +49,16 @@ export function ClaimMailboxDialog({ mailboxAddress }: ClaimMailboxDialogProps) 
 
       if (claimError) {
         setError(claimError.message)
-      } else {
+      }
+      else {
         setOpen(false)
         window.location.reload()
       }
-    } catch (err) {
+    }
+    catch {
       setError('Failed to claim mailbox. Please try again.')
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -90,7 +93,7 @@ export function ClaimMailboxDialog({ mailboxAddress }: ClaimMailboxDialogProps) 
               type="password"
               placeholder="At least 6 characters"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
             />
           </div>
 
@@ -101,7 +104,7 @@ export function ClaimMailboxDialog({ mailboxAddress }: ClaimMailboxDialogProps) 
               type="password"
               placeholder="Re-enter your password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={e => setConfirmPassword(e.target.value)}
             />
           </div>
 

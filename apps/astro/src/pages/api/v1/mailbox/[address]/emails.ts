@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
         JSON.stringify({ error: 'Authorization token required' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        { status: 401, headers: { 'Content-Type': 'application/json' } },
       )
     }
 
@@ -39,7 +39,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     if (!verification.valid) {
       return new Response(
         JSON.stringify({ error: verification.error || 'Invalid token' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        { status: 401, headers: { 'Content-Type': 'application/json' } },
       )
     }
 
@@ -48,7 +48,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     if (!mailboxAddress) {
       return new Response(
         JSON.stringify({ error: 'Mailbox address required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
       )
     }
 
@@ -56,7 +56,7 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
     if (verification.mailbox !== mailboxAddress) {
       return new Response(
         JSON.stringify({ error: 'Token does not match mailbox address' }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
+        { status: 403, headers: { 'Content-Type': 'application/json' } },
       )
     }
 
@@ -64,8 +64,8 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
 
     // Parse query parameters
     const url = new URL(request.url)
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100) // Max 100
-    const offset = parseInt(url.searchParams.get('offset') || '0')
+    const limit = Math.min(Number.parseInt(url.searchParams.get('limit') || '50'), 100) // Max 100
+    const offset = Number.parseInt(url.searchParams.get('offset') || '0')
     const unreadOnly = url.searchParams.get('unread_only') === 'true'
 
     // Get all emails for the mailbox
@@ -103,15 +103,16 @@ export const GET: APIRoute = async ({ request, locals, params }) => {
         emails: sanitizedEmails,
         total,
         limit,
-        offset
+        offset,
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
     )
-  } catch (error) {
+  }
+  catch (error) {
     console.error('API Error:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
     )
   }
 }

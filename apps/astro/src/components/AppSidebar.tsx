@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import { FileText, Github, Home, Info, Mail, Settings, Shield } from 'lucide-react'
+import { FileText, Github, Home, Info, Shield } from 'lucide-react'
 import React, { useState } from 'react'
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/sidebar'
 import { cn } from '@/lib/utils'
@@ -40,7 +40,7 @@ export function AppSidebar({ children, siteName = 'VMails' }: AppSidebarProps) {
   return (
     <div
       className={cn(
-        'rounded-md flex flex-col md:flex-row bg-background w-full flex-1 mx-auto border-0 overflow-hidden min-h-screen'
+        'rounded-md flex flex-col md:flex-row bg-background w-full flex-1 mx-auto border-0 overflow-hidden min-h-screen',
       )}
     >
       <Sidebar open={open} setOpen={setOpen}>

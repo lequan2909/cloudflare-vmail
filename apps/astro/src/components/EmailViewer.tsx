@@ -1,14 +1,14 @@
+import { Check, Code2, Copy, FileText, Shield } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Shield, FileText, Code2, Copy, Check } from 'lucide-react'
-import { Button } from './ui/button'
-import { sanitizeHtml, buildRawMime, copyToClipboard } from '@/lib/email-utils'
 import { useToast } from '@/hooks/use-toast'
+import { buildRawMime, copyToClipboard, sanitizeHtml } from '@/lib/email-utils'
 import { cn } from '@/lib/utils'
+import { Button } from './ui/button'
 
 interface EmailViewerProps {
   email: {
     id?: string
-    from?: { name?: string; address: string }
+    from?: { name?: string, address: string }
     messageTo?: string
     subject?: string
     date?: string
@@ -26,7 +26,8 @@ export function EmailViewer({ email }: EmailViewerProps) {
   const { toast } = useToast()
 
   const safeHtml = useMemo(() => {
-    if (!email.html) return ''
+    if (!email.html)
+      return ''
     return sanitizeHtml(email.html)
   }, [email.html])
 
@@ -58,7 +59,8 @@ export function EmailViewer({ email }: EmailViewerProps) {
         title: 'Copied to clipboard',
         description: `${mode.toUpperCase()} content copied successfully`,
       })
-    } else {
+    }
+    else {
       toast({
         title: 'Copy failed',
         description: 'Could not copy to clipboard',
@@ -107,17 +109,19 @@ export function EmailViewer({ email }: EmailViewerProps) {
           onClick={handleCopy}
           className="transition-all"
         >
-          {copied ? (
-            <>
-              <Check className="h-4 w-4 mr-2 text-green-600" />
-              Copied!
-            </>
-          ) : (
-            <>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy
-            </>
-          )}
+          {copied
+            ? (
+                <>
+                  <Check className="h-4 w-4 mr-2 text-green-600" />
+                  Copied!
+                </>
+              )
+            : (
+                <>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </>
+              )}
         </Button>
       </div>
 
@@ -127,7 +131,9 @@ export function EmailViewer({ email }: EmailViewerProps) {
           <div className="flex items-start gap-2">
             <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-blue-800 dark:text-blue-300">
-              <strong>Safe Mode:</strong> Dangerous scripts, forms, and external resources have been removed. All links open in new tabs.
+              <strong>Safe Mode:</strong>
+              {' '}
+              Dangerous scripts, forms, and external resources have been removed. All links open in new tabs.
             </div>
           </div>
         </div>
@@ -137,7 +143,7 @@ export function EmailViewer({ email }: EmailViewerProps) {
       <div
         className={cn(
           'rounded-lg border border-border overflow-hidden transition-all',
-          'bg-card'
+          'bg-card',
         )}
       >
         {mode === 'html' && (

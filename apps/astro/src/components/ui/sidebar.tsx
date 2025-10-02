@@ -1,6 +1,6 @@
 'use client'
-import React, { createContext, useContext, useState } from 'react'
 import { motion } from 'framer-motion'
+import React, { createContext, useContext, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface SidebarContextProps {
@@ -11,7 +11,7 @@ interface SidebarContextProps {
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(undefined)
 
-export const useSidebar = () => {
+export function useSidebar() {
   const context = useContext(SidebarContext)
   if (!context) {
     throw new Error('useSidebar must be used within a SidebarProvider')
@@ -19,7 +19,7 @@ export const useSidebar = () => {
   return context
 }
 
-export const SidebarProvider = ({
+export function SidebarProvider({
   children,
   open: openProp,
   setOpen: setOpenProp,
@@ -29,20 +29,20 @@ export const SidebarProvider = ({
   open?: boolean
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>
   animate?: boolean
-}) => {
+}) {
   const [openState, setOpenState] = useState(false)
 
   const open = openProp !== undefined ? openProp : openState
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate: animate }}>
+    <SidebarContext.Provider value={{ open, setOpen, animate }}>
       {children}
     </SidebarContext.Provider>
   )
 }
 
-export const Sidebar = ({
+export function Sidebar({
   children,
   open,
   setOpen,
@@ -52,7 +52,7 @@ export const Sidebar = ({
   open?: boolean
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>
   animate?: boolean
-}) => {
+}) {
   return (
     <SidebarProvider open={open} setOpen={setOpen} animate={animate}>
       {children}
@@ -60,7 +60,7 @@ export const Sidebar = ({
   )
 }
 
-export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
+export function SidebarBody(props: React.ComponentProps<typeof motion.div>) {
   return (
     <>
       <DesktopSidebar {...props} />
@@ -69,18 +69,18 @@ export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
   )
 }
 
-export const DesktopSidebar = ({
+export function DesktopSidebar({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof motion.div>) => {
+}: React.ComponentProps<typeof motion.div>) {
   const { open, setOpen, animate } = useSidebar()
   return (
     <>
       <motion.div
         className={cn(
           'h-full px-4 py-4 hidden md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] flex-shrink-0',
-          className
+          className,
         )}
         animate={{
           width: animate ? (open ? '300px' : '60px') : '300px',
@@ -95,13 +95,13 @@ export const DesktopSidebar = ({
   )
 }
 
-export const MobileSidebar = ({ className, children, ...props }: React.ComponentProps<'div'>) => {
+export function MobileSidebar({ className, children, ...props }: React.ComponentProps<'div'>) {
   const { open, setOpen } = useSidebar()
   return (
     <>
       <div
         className={cn(
-          'h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full'
+          'h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full',
         )}
         {...props}
       >
@@ -134,7 +134,7 @@ export const MobileSidebar = ({ className, children, ...props }: React.Component
             }}
             className={cn(
               'fixed h-full w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between',
-              className
+              className,
             )}
           >
             <div
@@ -164,7 +164,7 @@ export const MobileSidebar = ({ className, children, ...props }: React.Component
   )
 }
 
-export const SidebarLink = ({
+export function SidebarLink({
   link,
   className,
   ...props
@@ -176,7 +176,7 @@ export const SidebarLink = ({
   }
   className?: string
   props?: React.LinkHTMLAttributes<HTMLAnchorElement>
-}) => {
+}) {
   const { open, animate } = useSidebar()
   return (
     <a

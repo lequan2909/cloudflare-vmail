@@ -1,16 +1,16 @@
 import type { Email } from 'database/schema'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { actions } from 'astro:actions'
-import { MailIcon, RefreshCw, Sparkles, CheckCheck, Search, X } from 'lucide-react'
-import MailItem from './MailItem'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { Skeleton } from './ui/skeleton'
-import { MailboxStats } from './MailboxStats'
-import { ClaimMailboxDialog } from './ClaimMailboxDialog'
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { CheckCheck, MailIcon, RefreshCw, Search, Sparkles, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { ClaimMailboxDialog } from './ClaimMailboxDialog'
+import { MailboxStats } from './MailboxStats'
+import MailItem from './MailItem'
+import { Badge } from './ui/badge'
+import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { Skeleton } from './ui/skeleton'
 
 const queryClient = new QueryClient()
 
@@ -49,7 +49,8 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
           title: '📬 New email received',
           description: `From: ${email.from.name || email.from.address}`,
         })
-      } else {
+      }
+      else {
         toast({
           title: `📬 ${newEmailsCount} new emails received`,
           description: 'Check your inbox',
@@ -81,34 +82,37 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
         title: 'All emails marked as read',
         description: `${data.length} ${data.length === 1 ? 'email' : 'emails'} marked as read`,
       })
-    } catch (error) {
+    }
+    catch {
       toast({
         title: 'Failed to mark all as read',
         description: 'Please try again',
         variant: 'destructive',
       })
-    } finally {
+    }
+    finally {
       setIsMarkingAllRead(false)
     }
   }
 
   // Filter emails based on search term
   const filteredEmails = useMemo(() => {
-    if (!searchTerm.trim()) return data
+    if (!searchTerm.trim())
+      return data
 
     const lowerSearch = searchTerm.toLowerCase()
 
-    return data.filter(email => {
+    return data.filter((email) => {
       const subject = email.subject?.toLowerCase() || ''
       const fromName = email.from.name?.toLowerCase() || ''
       const fromAddress = email.from.address?.toLowerCase() || ''
       const text = email.text?.toLowerCase() || ''
 
       return (
-        subject.includes(lowerSearch) ||
-        fromName.includes(lowerSearch) ||
-        fromAddress.includes(lowerSearch) ||
-        text.includes(lowerSearch)
+        subject.includes(lowerSearch)
+        || fromName.includes(lowerSearch)
+        || fromAddress.includes(lowerSearch)
+        || text.includes(lowerSearch)
       )
     })
   }, [data, searchTerm])
@@ -127,7 +131,7 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
           <Input
             placeholder="Search emails (sender, subject, content)..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="pl-10 pr-10"
           />
           {searchTerm && (
@@ -186,7 +190,7 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
       {/* Loading State */}
       {isFetching && data.length === 0 && (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3].map(i => (
             <div key={i} className="p-4 border rounded-lg space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -203,71 +207,77 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
       )}
 
       {/* Email List */}
-      {!isFetching && data.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="relative inline-block mb-6">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-              <MailIcon className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <div className="absolute -top-1 -right-1">
-              <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-            </div>
-          </div>
+      {!isFetching && data.length === 0
+        ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="relative inline-block mb-6">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+                  <MailIcon className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <div className="absolute -top-1 -right-1">
+                  <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+                </div>
+              </div>
 
-          <h3 className="text-lg font-semibold mb-2">
-            Waiting for emails...
-          </h3>
-          <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
-            Your temporary mailbox is ready! Use this email address to sign up for services,
-            and new emails will appear here automatically within 30 seconds.
-          </p>
+              <h3 className="text-lg font-semibold mb-2">
+                Waiting for emails...
+              </h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
+                Your temporary mailbox is ready! Use this email address to sign up for services,
+                and new emails will appear here automatically within 30 seconds.
+              </p>
 
-          {/* Usage Guide */}
-          <details className="w-full max-w-md text-left bg-muted/30 rounded-lg p-4 cursor-pointer group">
-            <summary className="text-sm font-medium list-none flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                💡 How to use your temporary mailbox?
-              </span>
-              <span className="text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
-            </summary>
-            <ol className="mt-4 space-y-2 text-sm text-muted-foreground leading-relaxed">
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-semibold">1.</span>
-                <span>Copy your email address from the left panel</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-semibold">2.</span>
-                <span>Paste it on any website that requires email</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-semibold">3.</span>
-                <span>Return here to check for verification emails</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-semibold">4.</span>
-                <span>Complete verification and delete the mailbox</span>
-              </li>
-            </ol>
-          </details>
-        </div>
-      ) : filteredEmails.length > 0 ? (
-        <div className="space-y-2">
-          {filteredEmails.map((mail: Email) => (
-            <MailItem key={mail.id} mail={mail} />
-          ))}
-        </div>
-      ) : searchTerm ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Search className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No results found</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Try a different search term or clear the search
-          </p>
-          <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>
-            Clear search
-          </Button>
-        </div>
-      ) : null}
+              {/* Usage Guide */}
+              <details className="w-full max-w-md text-left bg-muted/30 rounded-lg p-4 cursor-pointer group">
+                <summary className="text-sm font-medium list-none flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    💡 How to use your temporary mailbox?
+                  </span>
+                  <span className="text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <ol className="mt-4 space-y-2 text-sm text-muted-foreground leading-relaxed">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-semibold">1.</span>
+                    <span>Copy your email address from the left panel</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-semibold">2.</span>
+                    <span>Paste it on any website that requires email</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-semibold">3.</span>
+                    <span>Return here to check for verification emails</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-semibold">4.</span>
+                    <span>Complete verification and delete the mailbox</span>
+                  </li>
+                </ol>
+              </details>
+            </div>
+          )
+        : filteredEmails.length > 0
+          ? (
+              <div className="space-y-2">
+                {filteredEmails.map((mail: Email) => (
+                  <MailItem key={mail.id} mail={mail} />
+                ))}
+              </div>
+            )
+          : searchTerm
+            ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No results found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Try a different search term or clear the search
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>
+                  Clear search
+                </Button>
+              </div>
+            )
+          : null}
     </div>
   )
 }

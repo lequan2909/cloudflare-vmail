@@ -2,204 +2,140 @@ import { count, desc, eq, and } from "drizzle-orm";
 import { DrizzleD1Database } from 'drizzle-orm/d1'
 import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey } from "./schema"
 
-export async function insertEmail(db: DrizzleD1Database, email: InsertEmail) {
+// Helper function to handle database operations with consistent error handling
+async function dbOperation<T>(operation: () => Promise<T>, fallback: T): Promise<T> {
   try {
-    await db.insert(emails).values(email).execute();
+    return await operation();
   } catch (e) {
     console.error(e);
+    return fallback;
   }
+}
+
+export async function insertEmail(db: DrizzleD1Database, email: InsertEmail) {
+  return dbOperation(() => db.insert(emails).values(email).execute(), undefined);
 }
 
 export async function getEmails(db: DrizzleD1Database) {
-  try {
-    return await db.select().from(emails).all();
-  } catch (e) {
-    return [];
-  }
+  return dbOperation(() => db.select().from(emails).all(), []);
 }
 
 export async function deleteEmail(db: DrizzleD1Database, id: string) {
-  try {
-    return await db.delete(emails).where(eq(emails.id, id)).execute();
-  } catch (e) {
-    return [];
-  }
+  return dbOperation(() => db.delete(emails).where(eq(emails.id, id)).execute(), null);
 }
 
 export async function deleteAllEmailsByMessageTo(db: DrizzleD1Database, messageTo: string) {
-  try {
-    return await db.delete(emails).where(eq(emails.messageTo, messageTo)).execute();
-  } catch (e) {
-    return [];
-  }
+  return dbOperation(() => db.delete(emails).where(eq(emails.messageTo, messageTo)).execute(), null);
 }
 
 export async function getEmail(db: DrizzleD1Database, id: string) {
-  try {
-    const result = await db
-      .select()
-      .from(emails)
-      .where(and(eq(emails.id, id)))
-      .all();
-    if (result.length != 1) {
-      return null;
-    }
-    return result[0];
-  } catch (e) {
-    return null;
-  }
+  return dbOperation(async () => {
+    const result = await db.select().from(emails).where(eq(emails.id, id)).all();
+    return result[0] || null;
+  }, null);
 }
 
 export async function getMailboxOfEmail(db: DrizzleD1Database, id: string) {
-  try {
+  return dbOperation(async () => {
     const result = await db
       .select({ messageTo: emails.messageTo })
       .from(emails)
-      .where(and(eq(emails.id, id)))
+      .where(eq(emails.id, id))
       .limit(1)
       .all();
-    return result[0];
-  } catch (e) {
-    return null;
-  }
+    return result[0] || null;
+  }, null);
 }
 
-export async function getEmailsByMessageTo(
-  db: DrizzleD1Database,
-  messageTo: string
-) {
-  try {
-    return await db
-      .select()
+export async function getEmailsByMessageTo(db: DrizzleD1Database, messageTo: string) {
+  return dbOperation(() =>
+    db.select()
       .from(emails)
       .where(eq(emails.messageTo, messageTo))
       .orderBy(desc(emails.createdAt))
-      .all();
-  } catch (e) {
-    return [];
-  }
+      .all(),
+    []
+  );
 }
 
 export async function getEmailsCount(db: DrizzleD1Database) {
-  try {
+  return dbOperation(async () => {
     const res = await db.select({ count: count() }).from(emails);
-    return res[0]?.count;
-  } catch (e) {
-    return 0;
-  }
+    return res[0]?.count ?? 0;
+  }, 0);
 }
 
-export async function markEmailAsRead(
-  db: DrizzleD1Database,
-  id: string
-) {
-  try {
-    return await db
-      .update(emails)
-      .set({
-        isRead: true,
-        readAt: new Date()
-      })
+export async function markEmailAsRead(db: DrizzleD1Database, id: string) {
+  return dbOperation(() =>
+    db.update(emails)
+      .set({ isRead: true, readAt: new Date() })
       .where(eq(emails.id, id))
-      .execute();
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
+      .execute(),
+    null
+  );
 }
 
-export async function markAllAsRead(
-  db: DrizzleD1Database,
-  messageTo: string
-) {
-  try {
-    return await db
-      .update(emails)
-      .set({
-        isRead: true,
-        readAt: new Date()
-      })
+export async function markAllAsRead(db: DrizzleD1Database, messageTo: string) {
+  return dbOperation(() =>
+    db.update(emails)
+      .set({ isRead: true, readAt: new Date() })
       .where(eq(emails.messageTo, messageTo))
-      .execute();
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
+      .execute(),
+    null
+  );
 }
 
-export async function getMailboxStats(
-  db: DrizzleD1Database,
-  messageTo: string
-) {
-  try {
+export async function getMailboxStats(db: DrizzleD1Database, messageTo: string) {
+  return dbOperation(async () => {
     const [total, unread] = await Promise.all([
       db.select({ count: count() })
         .from(emails)
         .where(eq(emails.messageTo, messageTo)),
       db.select({ count: count() })
         .from(emails)
-        .where(and(
-          eq(emails.messageTo, messageTo),
-          eq(emails.isRead, false)
-        ))
+        .where(and(eq(emails.messageTo, messageTo), eq(emails.isRead, false)))
     ]);
 
+    const totalCount = total[0]?.count ?? 0;
+    const unreadCount = unread[0]?.count ?? 0;
+
     return {
-      total: total[0]?.count || 0,
-      unread: unread[0]?.count || 0,
-      read: (total[0]?.count || 0) - (unread[0]?.count || 0)
+      total: totalCount,
+      unread: unreadCount,
+      read: totalCount - unreadCount
     };
-  } catch (e) {
-    console.error(e);
-    return {
-      total: 0,
-      unread: 0,
-      read: 0
-    };
-  }
+  }, { total: 0, unread: 0, read: 0 });
 }
 
 // ============ Mailbox Functions ============
 
+// Helper: Convert byte array to hex string
+const toHex = (bytes: Uint8Array) =>
+  Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+
 // Generate a random salt
 async function generateSalt(): Promise<string> {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return toHex(crypto.getRandomValues(new Uint8Array(16)));
 }
 
 // Hash password with salt using Web Crypto API
 async function hashPassword(password: string, salt: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + salt);
+  const data = new TextEncoder().encode(password + salt);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+  return toHex(new Uint8Array(hashBuffer));
 }
 
 // Verify password
 async function verifyPassword(password: string, salt: string, hash: string): Promise<boolean> {
-  const computedHash = await hashPassword(password, salt);
-  return computedHash === hash;
+  return await hashPassword(password, salt) === hash;
 }
 
 // Check if mailbox is claimed
-export async function isMailboxClaimed(
-  db: DrizzleD1Database,
-  address: string
-): Promise<boolean> {
-  try {
-    const result = await db
-      .select()
-      .from(mailboxes)
-      .where(eq(mailboxes.address, address))
-      .limit(1)
-      .all();
+export async function isMailboxClaimed(db: DrizzleD1Database, address: string): Promise<boolean> {
+  return dbOperation(async () => {
+    const result = await db.select().from(mailboxes).where(eq(mailboxes.address, address)).limit(1).all();
     return result.length > 0;
-  } catch (e) {
-    console.error(e);
-    return false;
-  }
+  }, false);
 }
 
 // Claim a mailbox with password
@@ -209,10 +145,8 @@ export async function claimMailbox(
   password: string,
   expiresInDays: number = 30
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Check if already claimed
-    const claimed = await isMailboxClaimed(db, address);
-    if (claimed) {
+  return dbOperation(async () => {
+    if (await isMailboxClaimed(db, address)) {
       return { success: false, error: 'Mailbox already claimed' };
     }
 
@@ -231,10 +165,7 @@ export async function claimMailbox(
     }).execute();
 
     return { success: true };
-  } catch (e) {
-    console.error(e);
-    return { success: false, error: 'Failed to claim mailbox' };
-  }
+  }, { success: false, error: 'Failed to claim mailbox' });
 }
 
 // Login to claimed mailbox
@@ -243,65 +174,37 @@ export async function loginMailbox(
   address: string,
   password: string
 ): Promise<{ success: boolean; error?: string; mailbox?: typeof mailboxes.$inferSelect }> {
-  try {
-    const result = await db
-      .select()
-      .from(mailboxes)
-      .where(eq(mailboxes.address, address))
-      .limit(1)
-      .all();
-
-    if (result.length === 0) {
-      return { success: false, error: 'Mailbox not found' };
-    }
-
+  return dbOperation(async () => {
+    const result = await db.select().from(mailboxes).where(eq(mailboxes.address, address)).limit(1).all();
     const mailbox = result[0];
+
     if (!mailbox) {
       return { success: false, error: 'Mailbox not found' };
     }
 
-    // Check if expired
     if (mailbox.expiresAt && new Date(mailbox.expiresAt) < new Date()) {
       return { success: false, error: 'Mailbox has expired' };
     }
 
-    // Verify password
-    const isValid = await verifyPassword(password, mailbox.salt, mailbox.passwordHash);
-    if (!isValid) {
+    if (!await verifyPassword(password, mailbox.salt, mailbox.passwordHash)) {
       return { success: false, error: 'Invalid password' };
     }
 
-    // Update last login time
-    await db
-      .update(mailboxes)
+    await db.update(mailboxes)
       .set({ lastLoginAt: new Date() })
       .where(eq(mailboxes.address, address))
       .execute();
 
     return { success: true, mailbox };
-  } catch (e) {
-    console.error(e);
-    return { success: false, error: 'Login failed' };
-  }
+  }, { success: false, error: 'Login failed' });
 }
 
 // Get mailbox info
-export async function getMailbox(
-  db: DrizzleD1Database,
-  address: string
-) {
-  try {
-    const result = await db
-      .select()
-      .from(mailboxes)
-      .where(eq(mailboxes.address, address))
-      .limit(1)
-      .all();
+export async function getMailbox(db: DrizzleD1Database, address: string) {
+  return dbOperation(async () => {
+    const result = await db.select().from(mailboxes).where(eq(mailboxes.address, address)).limit(1).all();
     return result[0] || null;
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
+  }, null);
 }
 
 // Extend mailbox expiration
@@ -310,7 +213,7 @@ export async function extendMailboxExpiration(
   address: string,
   additionalDays: number = 30
 ) {
-  try {
+  return dbOperation(async () => {
     const mailbox = await getMailbox(db, address);
     if (!mailbox) {
       return { success: false, error: 'Mailbox not found' };
@@ -319,32 +222,22 @@ export async function extendMailboxExpiration(
     const currentExpiry = new Date(mailbox.expiresAt);
     const newExpiry = new Date(currentExpiry.getTime() + additionalDays * 24 * 60 * 60 * 1000);
 
-    await db
-      .update(mailboxes)
+    await db.update(mailboxes)
       .set({ expiresAt: newExpiry })
       .where(eq(mailboxes.address, address))
       .execute();
 
     return { success: true, expiresAt: newExpiry };
-  } catch (e) {
-    console.error(e);
-    return { success: false, error: 'Failed to extend expiration' };
-  }
+  }, { success: false, error: 'Failed to extend expiration' });
 }
 
 // ============ API Key Functions ============
 
 // Generate a random API key
-function generateApiKey(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return 'vmails_' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-}
+const generateApiKey = () => 'vmails_' + toHex(crypto.getRandomValues(new Uint8Array(32)));
 
 // Generate unique ID
-function generateId(): string {
-  return crypto.randomUUID();
-}
+const generateId = () => crypto.randomUUID();
 
 // Create API key
 export async function createApiKey(
@@ -353,7 +246,7 @@ export async function createApiKey(
   mailboxAddress?: string,
   expiresInDays?: number
 ): Promise<{ success: boolean; apiKey?: string; error?: string }> {
-  try {
+  return dbOperation<{ success: boolean; apiKey?: string; error?: string }>(async () => {
     const id = generateId();
     const key = generateApiKey();
     const now = new Date();
@@ -374,10 +267,7 @@ export async function createApiKey(
     }).execute();
 
     return { success: true, apiKey: key };
-  } catch (e) {
-    console.error(e);
-    return { success: false, error: 'Failed to create API key' };
-  }
+  }, { success: false, error: 'Failed to create API key' });
 }
 
 // Verify API key
@@ -385,45 +275,29 @@ export async function verifyApiKey(
   db: DrizzleD1Database,
   key: string
 ): Promise<{ valid: boolean; apiKey?: typeof apiKeys.$inferSelect; error?: string }> {
-  try {
-    const result = await db
-      .select()
-      .from(apiKeys)
-      .where(eq(apiKeys.key, key))
-      .limit(1)
-      .all();
-
-    if (result.length === 0) {
-      return { valid: false, error: 'Invalid API key' };
-    }
-
+  return dbOperation(async () => {
+    const result = await db.select().from(apiKeys).where(eq(apiKeys.key, key)).limit(1).all();
     const apiKey = result[0];
+
     if (!apiKey) {
       return { valid: false, error: 'Invalid API key' };
     }
 
-    // Check if active
     if (!apiKey.isActive) {
       return { valid: false, error: 'API key is inactive' };
     }
 
-    // Check if expired
     if (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date()) {
       return { valid: false, error: 'API key has expired' };
     }
 
-    // Update last used timestamp
-    await db
-      .update(apiKeys)
+    await db.update(apiKeys)
       .set({ lastUsedAt: new Date() })
       .where(eq(apiKeys.key, key))
       .execute();
 
     return { valid: true, apiKey };
-  } catch (e) {
-    console.error(e);
-    return { valid: false, error: 'Failed to verify API key' };
-  }
+  }, { valid: false, error: 'Failed to verify API key' });
 }
 
 // Revoke API key
@@ -431,35 +305,24 @@ export async function revokeApiKey(
   db: DrizzleD1Database,
   key: string
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    await db
-      .update(apiKeys)
+  return dbOperation<{ success: boolean; error?: string }>(async () => {
+    await db.update(apiKeys)
       .set({ isActive: false })
       .where(eq(apiKeys.key, key))
       .execute();
-
     return { success: true };
-  } catch (e) {
-    console.error(e);
-    return { success: false, error: 'Failed to revoke API key' };
-  }
+  }, { success: false, error: 'Failed to revoke API key' });
 }
 
 // Get all API keys for a mailbox
-export async function getApiKeysByMailbox(
-  db: DrizzleD1Database,
-  mailboxAddress: string
-) {
-  try {
-    return await db
-      .select()
+export async function getApiKeysByMailbox(db: DrizzleD1Database, mailboxAddress: string) {
+  return dbOperation(() =>
+    db.select()
       .from(apiKeys)
       .where(eq(apiKeys.mailboxAddress, mailboxAddress))
       .orderBy(desc(apiKeys.createdAt))
-      .all();
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
+      .all(),
+    []
+  );
 }
 

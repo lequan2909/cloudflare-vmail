@@ -1,7 +1,8 @@
+import type { ClassValue } from 'clsx'
 import type {
   Config,
 } from 'unique-names-generator'
-import { type ClassValue, clsx } from 'clsx'
+import { clsx } from 'clsx'
 import * as jose from 'jose'
 import { twMerge } from 'tailwind-merge'
 import {
@@ -45,14 +46,15 @@ export async function genMailboxAccessToken(mailboxAddress: string, secret: stri
 }
 
 // Verify API access token
-export async function verifyMailboxAccessToken(token: string, secret: string): Promise<{ valid: boolean; mailbox?: string; error?: string }> {
+export async function verifyMailboxAccessToken(token: string, secret: string): Promise<{ valid: boolean, mailbox?: string, error?: string }> {
   try {
     const { payload } = await jose.jwtVerify(token, encodeJWTSecret(secret))
     if (typeof payload.mailbox === 'string') {
       return { valid: true, mailbox: payload.mailbox }
     }
     return { valid: false, error: 'Invalid token payload' }
-  } catch (error) {
+  }
+  catch (error) {
     return { valid: false, error: error instanceof Error ? error.message : 'Token verification failed' }
   }
 }

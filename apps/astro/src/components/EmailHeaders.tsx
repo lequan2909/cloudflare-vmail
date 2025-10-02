@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, Copy, Check, Database } from 'lucide-react'
-import { Button } from './ui/button'
-import { copyToClipboard } from '@/lib/email-utils'
-import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
+import { Check, ChevronDown, ChevronUp, Copy, Database } from 'lucide-react'
+import { useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
+import { copyToClipboard } from '@/lib/email-utils'
+import { Button } from './ui/button'
 
-type Address = {
+interface Address {
   address: string
   name?: string
 }
@@ -47,12 +47,14 @@ interface HeaderItem {
 
 // Helper function to format addresses
 function formatAddress(addr: Address | undefined | null): string {
-  if (!addr) return 'N/A'
+  if (!addr)
+    return 'N/A'
   return addr.name ? `${addr.name} <${addr.address}>` : addr.address
 }
 
 function formatAddresses(addrs: Address[] | undefined | null): string {
-  if (!addrs || addrs.length === 0) return 'N/A'
+  if (!addrs || addrs.length === 0)
+    return 'N/A'
   return addrs.map(addr => formatAddress(addr)).join(', ')
 }
 
@@ -218,7 +220,7 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
     <div className="bg-muted/30 rounded-lg border border-border overflow-hidden">
       {/* Primary Headers - Always Visible */}
       <div className="p-4 space-y-3">
-        {primaryHeaders.map((header) => (
+        {primaryHeaders.map(header => (
           <HeaderRow
             key={header.label}
             label={header.label}
@@ -237,7 +239,7 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
         expanded={expandedSection === 'recipients'}
         onToggle={() => toggleSection('recipients')}
       >
-        {recipientHeaders.map((header) => (
+        {recipientHeaders.map(header => (
           <HeaderRow
             key={header.label}
             label={header.label}
@@ -256,7 +258,7 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
         expanded={expandedSection === 'technical'}
         onToggle={() => toggleSection('technical')}
       >
-        {technicalHeaders.map((header) => (
+        {technicalHeaders.map(header => (
           <HeaderRow
             key={header.label}
             label={header.label}
@@ -276,7 +278,7 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
         onToggle={() => toggleSection('metadata')}
         icon={<Database className="h-4 w-4 text-muted-foreground" />}
       >
-        {metadataHeaders.map((header) => (
+        {metadataHeaders.map(header => (
           <HeaderRow
             key={header.label}
             label={header.label}
@@ -302,7 +304,8 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
                 {Object.entries(header).map(([key, value]) => (
                   <div key={key} className="grid grid-cols-[150px_1fr] gap-2 py-1">
                     <div className="text-muted-foreground font-semibold truncate">
-                      {key}:
+                      {key}
+                      :
                     </div>
                     <div className="text-foreground break-all">{value}</div>
                   </div>
@@ -342,11 +345,13 @@ function CollapsibleSection({
           {icon}
           <span className="text-sm font-medium text-foreground">{title}</span>
         </div>
-        {expanded ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        )}
+        {expanded
+          ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            )
+          : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
       </button>
 
       {expanded && (
@@ -384,11 +389,13 @@ function HeaderRow({ label, value, copyable, copied, onCopy }: HeaderRowProps) {
             onClick={onCopy}
             title={`Copy ${label}`}
           >
-            {copied ? (
-              <Check className="h-3 w-3 text-green-600" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
+            {copied
+              ? (
+                  <Check className="h-3 w-3 text-green-600" />
+                )
+              : (
+                  <Copy className="h-3 w-3" />
+                )}
           </Button>
         )}
       </div>

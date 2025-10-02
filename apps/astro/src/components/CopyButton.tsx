@@ -1,5 +1,6 @@
+import type { ButtonHTMLAttributes, DetailedHTMLProps } from 'react'
 import { Icon } from '@iconify/react'
-import { type ButtonHTMLAttributes, type DetailedHTMLProps, useState } from 'react'
+import { useState } from 'react'
 import { Button } from './ui/button'
 
 interface CopyButtonProps
@@ -61,7 +62,7 @@ export default function CopyButton({ content, ...props }: CopyButtonProps) {
           setTimeout(() => setStatus('idle'), 2000)
         }
       }
-      catch (err) {
+      catch {
         setStatus('error')
         setTimeout(() => setStatus('idle'), 2000)
       }

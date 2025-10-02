@@ -1,33 +1,48 @@
-import { encodeJWTSecret, generateNewMailAddr, genToken } from '@/lib/utils'
+import type { ActionAPIContext } from 'astro:actions'
 import { ActionError, defineAction } from 'astro:actions'
 import { z } from 'astro:schema'
 import * as DAO from 'database/dao'
 import { getCloudflareD1 } from 'database/db'
 import * as jose from 'jose'
+import { encodeJWTSecret, generateNewMailAddr, genToken } from '@/lib/utils'
 
 export interface MailboxSession {
   mailbox: string
   token: string
 }
 
+// Helper: Get and verify mailbox session
+async function getMailboxSession(ctx: ActionAPIContext): Promise<MailboxSession> {
+  const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
+  if (!mailbox) {
+    throw new ActionError({
+      code: 'NOT_FOUND',
+      message: 'mailbox not found',
+    })
+  }
+
+  await jose.jwtVerify(
+    mailbox.token,
+    encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
+  )
+
+  return mailbox
+}
+
+// Helper: Set mailbox session cookie
+function setMailboxSession(ctx: ActionAPIContext, session: MailboxSession) {
+  ctx.cookies.set('mailbox', session, {
+    httpOnly: true,
+    maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
+    path: '/',
+  })
+}
+
 export const server = {
   getEmailsByMessageToWho: defineAction({
     handler: async (_, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
-
-      if (!mailbox) {
-        throw new ActionError({
-          code: 'NOT_FOUND',
-          message: 'mailbox not found',
-        })
-      }
-
-      await jose.jwtVerify(
-        mailbox.token,
-        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
-      )
-
+      const mailbox = await getMailboxSession(ctx)
       return await DAO.getEmailsByMessageTo(db, mailbox.mailbox)
     },
   }),
@@ -37,7 +52,8 @@ export const server = {
     }),
     handler: async (input, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const mailbox = (await DAO.getMailboxOfEmail(db, input.id))?.messageTo
+      const result = await DAO.getMailboxOfEmail(db, input.id)
+      const mailbox = result?.messageTo
 
       if (!mailbox) {
         throw new ActionError({
@@ -47,16 +63,7 @@ export const server = {
       }
 
       const token = await genToken(mailbox, ctx.locals.runtime.env.JWT_SECRET)
-      const session: MailboxSession = {
-        mailbox,
-        token,
-      }
-
-      ctx.cookies.set('mailbox', session, {
-        httpOnly: true,
-        maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
-        path: '/',
-      })
+      setMailboxSession(ctx, { mailbox, token })
 
       return mailbox
     },
@@ -68,22 +75,18 @@ export const server = {
       'domain': z.string(),
     }),
     handler: async (input, ctx) => {
-      const cfToken = input['cf-turnstile-response']
       const formData = new FormData()
       formData.append('secret', ctx.locals.runtime.env.TURNSTILE_SECRET)
-      formData.append('response', cfToken)
+      formData.append('response', input['cf-turnstile-response'])
 
-      const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
-      const result = await fetch(url, {
+      const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
         body: formData,
         method: 'POST',
       })
 
-      const outcome = z
-        .object({ success: z.boolean() })
-        .parse(await result.json())
+      const outcome = z.object({ success: z.boolean() }).parse(await result.json())
 
-      if (!outcome) {
+      if (!outcome.success) {
         throw new ActionError({
           code: 'UNAUTHORIZED',
           message: 'complete the turnstile challenge',
@@ -91,15 +94,8 @@ export const server = {
       }
 
       const newMailbox = generateNewMailAddr(input.domain)
-      const token = await genToken(
-        newMailbox,
-        ctx.locals.runtime.env.JWT_SECRET,
-      )
-      const session: MailboxSession = { mailbox: newMailbox, token }
-      ctx.cookies.set('mailbox', session, {
-        httpOnly: true,
-        maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
-      })
+      const token = await genToken(newMailbox, ctx.locals.runtime.env.JWT_SECRET)
+      setMailboxSession(ctx, { mailbox: newMailbox, token })
 
       return newMailbox
     },
@@ -107,20 +103,7 @@ export const server = {
   deleteAllEmailsByMessageTo: defineAction({
     handler: async (_, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
-
-      if (!mailbox) {
-        throw new ActionError({
-          code: 'NOT_FOUND',
-          message: 'mailbox not found',
-        })
-      }
-
-      await jose.jwtVerify(
-        mailbox.token,
-        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
-      )
-
+      const mailbox = await getMailboxSession(ctx)
       return await DAO.deleteAllEmailsByMessageTo(db, mailbox.mailbox)
     },
   }),
@@ -199,12 +182,7 @@ export const server = {
     }),
     handler: async (input, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const result = await DAO.claimMailbox(
-        db,
-        input.address,
-        input.password,
-        input.expiresInDays
-      )
+      const result = await DAO.claimMailbox(db, input.address, input.password, input.expiresInDays)
 
       if (!result.success) {
         throw new ActionError({
@@ -213,18 +191,8 @@ export const server = {
         })
       }
 
-      // Auto login after claim
       const token = await genToken(input.address, ctx.locals.runtime.env.JWT_SECRET)
-      const session: MailboxSession = {
-        mailbox: input.address,
-        token,
-      }
-
-      ctx.cookies.set('mailbox', session, {
-        httpOnly: true,
-        maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
-        path: '/',
-      })
+      setMailboxSession(ctx, { mailbox: input.address, token })
 
       return { success: true }
     },
@@ -247,16 +215,7 @@ export const server = {
       }
 
       const token = await genToken(input.address, ctx.locals.runtime.env.JWT_SECRET)
-      const session: MailboxSession = {
-        mailbox: input.address,
-        token,
-      }
-
-      ctx.cookies.set('mailbox', session, {
-        httpOnly: true,
-        maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
-        path: '/',
-      })
+      setMailboxSession(ctx, { mailbox: input.address, token })
 
       return { success: true, mailbox: result.mailbox }
     },
@@ -270,20 +229,7 @@ export const server = {
     }),
     handler: async (input, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
-
-      if (!mailbox) {
-        throw new ActionError({
-          code: 'NOT_FOUND',
-          message: 'mailbox not found',
-        })
-      }
-
-      await jose.jwtVerify(
-        mailbox.token,
-        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
-      )
-
+      await getMailboxSession(ctx) // Verify session
       return await DAO.markEmailAsRead(db, input.id)
     },
   }),
@@ -291,20 +237,7 @@ export const server = {
   markAllAsRead: defineAction({
     handler: async (_, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
-
-      if (!mailbox) {
-        throw new ActionError({
-          code: 'NOT_FOUND',
-          message: 'mailbox not found',
-        })
-      }
-
-      await jose.jwtVerify(
-        mailbox.token,
-        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
-      )
-
+      const mailbox = await getMailboxSession(ctx)
       return await DAO.markAllAsRead(db, mailbox.mailbox)
     },
   }),
@@ -312,20 +245,7 @@ export const server = {
   getMailboxStats: defineAction({
     handler: async (_, ctx) => {
       const db = getCloudflareD1(ctx.locals.runtime.env.DB)
-      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
-
-      if (!mailbox) {
-        throw new ActionError({
-          code: 'NOT_FOUND',
-          message: 'mailbox not found',
-        })
-      }
-
-      await jose.jwtVerify(
-        mailbox.token,
-        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
-      )
-
+      const mailbox = await getMailboxSession(ctx)
       return await DAO.getMailboxStats(db, mailbox.mailbox)
     },
   }),

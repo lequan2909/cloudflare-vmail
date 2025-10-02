@@ -1,9 +1,9 @@
 ---
-import DocsLayout from '@/layouts/DocsLayout.astro'
 import { CodeBlock } from '@/components/CodeBlock'
+import DocsLayout from '@/layouts/DocsLayout.astro'
 
 const Env = Astro.locals.runtime.env
-const baseUrl = Astro.url.origin + '/api/v1'
+const baseUrl = `${Astro.url.origin}/api/v1`
 
 // Code examples as strings to avoid template literal issues
 const nodeExample = `const BASE_URL = '${Astro.url.origin}/api/v1';
@@ -139,7 +139,7 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
   -H "Authorization: Bearer YOUR_TOKEN_HERE"`
 ---
 
-<DocsLayout pageTitle='Developer API' title={`Developer API - ${Env.SITE_NAME}`} description="Complete API documentation for developers">
+<DocsLayout pageTitle="Developer API" title={`Developer API - ${Env.SITE_NAME}`} description="Complete API documentation for developers">
   <div class="not-prose mb-8">
     <div class="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-l-4 border-primary rounded-lg p-6">
       <h1 class="text-4xl font-bold mb-3 text-foreground">Developer API</h1>
@@ -181,8 +181,12 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
   </p>
 
   <div class="not-prose my-4">
-    <CodeBlock code={`curl -X POST ${baseUrl}/mailbox \\
-  -H "Content-Type: application/json"`} language="bash" client:load />
+    <CodeBlock
+      code={`curl -X POST ${baseUrl}/mailbox \\
+  -H "Content-Type: application/json"`}
+      language="bash"
+      client:load
+    />
   </div>
 
   <h3 id="using-token">Using Your Token</h3>
@@ -191,7 +195,7 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
   </p>
 
   <div class="not-prose my-4">
-    <CodeBlock code={`Authorization: Bearer YOUR_TOKEN_HERE`} language="bash" client:load />
+    <CodeBlock code="Authorization: Bearer YOUR_TOKEN_HERE" language="bash" client:load />
   </div>
 
   <h2 id="token-security">Token Security</h2>
@@ -232,15 +236,20 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
         </div>
         <div>
           <h4 class="text-sm font-semibold mb-2">Response (201 Created)</h4>
-          <CodeBlock code={JSON.stringify({
+          <CodeBlock
+            code={JSON.stringify({
   success: true,
   mailbox: {
     address: 'random123@example.com',
     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
     expiresIn: '7 days',
-    createdAt: '2025-10-03T12:00:00.000Z'
-  }
-}, null, 2)} language="json" className="text-xs" client:load />
+    createdAt: '2025-10-03T12:00:00.000Z',
+  },
+}, null, 2)}
+            language="json"
+            className="text-xs"
+            client:load
+          />
         </div>
       </div>
     </div>
@@ -272,7 +281,8 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
         </div>
         <div>
           <h4 class="text-sm font-semibold mb-2">Response (200 OK)</h4>
-          <CodeBlock code={JSON.stringify({
+          <CodeBlock
+            code={JSON.stringify({
   success: true,
   emails: [
     {
@@ -286,13 +296,17 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
       readAt: null,
       priority: 'normal',
       textPreview: 'This is a preview of the email content...',
-      hasHtml: true
-    }
+      hasHtml: true,
+    },
   ],
   total: 1,
   limit: 50,
-  offset: 0
-}, null, 2)} language="json" className="text-xs" client:load />
+  offset: 0,
+}, null, 2)}
+            language="json"
+            className="text-xs"
+            client:load
+          />
         </div>
       </div>
     </div>
@@ -316,7 +330,8 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
         </div>
         <div>
           <h4 class="text-sm font-semibold mb-2">Response (200 OK)</h4>
-          <CodeBlock code={JSON.stringify({
+          <CodeBlock
+            code={JSON.stringify({
   success: true,
   email: {
     id: 'abc123',
@@ -329,9 +344,13 @@ curl -X DELETE ${Astro.url.origin}/api/v1/mailbox/random123@example.com/emails/a
     html: '<html>HTML content...</html>',
     headers: [{ 'Content-Type': 'text/html; charset=utf-8' }],
     isRead: false,
-    priority: 'normal'
-  }
-}, null, 2)} language="json" className="text-xs" client:load />
+    priority: 'normal',
+  },
+}, null, 2)}
+            language="json"
+            className="text-xs"
+            client:load
+          />
         </div>
       </div>
     </div>

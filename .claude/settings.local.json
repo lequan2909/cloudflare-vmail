@@ -6,7 +6,8 @@
       "Bash(pnpm astro check:*)",
       "Bash(pnpm type-check:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(pnpm lint)"
     ]
   },
   "outputStyle": "default"

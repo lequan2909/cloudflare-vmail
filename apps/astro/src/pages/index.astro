@@ -1,14 +1,14 @@
 ---
 import type { MailboxSession } from '@/actions'
+import { actions } from 'astro:actions'
+import { DomainNoticeBanner } from '@/components/DomainNoticeBanner'
 import GenerateNewMailboxForm from '@/components/GenerateNewMailboxForm.astro'
 import Inbox from '@/components/Inbox'
 import Infomation from '@/components/Infomation.astro'
 import LoggedInMailboxForm from '@/components/LoggedInMailboxForm.astro'
-import { DomainNoticeBanner } from '@/components/DomainNoticeBanner'
 import { MailboxAuth } from '@/components/MailboxAuth'
 import PageHeader from '@/components/PageHeader.astro'
 import Layout from '@/layouts/Layout.astro'
-import { actions } from 'astro:actions'
 
 const savedMailbox = Astro.cookies.get('mailbox')?.json() as MailboxSession
 
@@ -20,7 +20,7 @@ const mails = savedMailbox
 let isClaimed = false
 if (savedMailbox?.mailbox) {
   const claimedResult = await Astro.callAction(actions.isMailboxClaimed, {
-    address: savedMailbox.mailbox
+    address: savedMailbox.mailbox,
   })
   isClaimed = claimedResult?.data || false
 }
@@ -48,7 +48,8 @@ const Env = Astro.locals.runtime.env
         <div class="bg-card border border-border rounded-lg shadow-sm">
           <div class="p-6">
             {
-              !savedMailbox?.mailbox ? (
+              !savedMailbox?.mailbox
+? (
                 <div class="space-y-6">
                   <!-- Create New Mailbox -->
                   <div>
@@ -69,7 +70,8 @@ const Env = Astro.locals.runtime.env
                   <!-- Login to Existing Mailbox -->
                   <MailboxAuth client:load />
                 </div>
-              ) : (
+              )
+: (
                 <div>
                   <h3 class="text-lg font-semibold text-card-foreground mb-4">
                     {isClaimed ? 'Your Mailbox' : 'Temporary Mailbox'}
@@ -88,14 +90,16 @@ const Env = Astro.locals.runtime.env
           class="bg-card border border-border rounded-lg shadow-sm h-full min-h-[600px] p-6"
           transition:name="inbox-container"
         >
-          {savedMailbox?.mailbox ? (
+          {savedMailbox?.mailbox
+? (
             <Inbox
               mails={mails || []}
               mailboxAddress={savedMailbox.mailbox}
               isClaimed={isClaimed}
               client:load
             />
-          ) : (
+          )
+: (
             <div class="flex flex-col items-center justify-center h-full text-center">
               <div class="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
                 <svg class="h-10 w-10 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">

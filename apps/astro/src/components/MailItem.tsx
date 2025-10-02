@@ -1,14 +1,14 @@
 import type { Email } from 'database/schema'
-import { formatDistanceToNow } from 'date-fns'
-import { useState } from 'react'
 import { actions } from 'astro:actions'
+import { formatDistanceToNow } from 'date-fns'
 import { Circle } from 'lucide-react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 export default function MailItem({ mail: item }: { mail: Email }) {
   const [isRead, setIsRead] = useState(item.isRead)
 
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = async (_e: React.MouseEvent) => {
     if (!isRead) {
       // Optimistically update UI
       setIsRead(true)
@@ -28,7 +28,7 @@ export default function MailItem({ mail: item }: { mail: Email }) {
         'block p-4 rounded-lg border transition-colors',
         isRead
           ? 'bg-card border-border hover:bg-muted/50'
-          : 'bg-primary/5 border-primary/20 hover:bg-primary/10'
+          : 'bg-primary/5 border-primary/20 hover:bg-primary/10',
       )}
     >
       <div className="flex items-start gap-3">
@@ -48,8 +48,9 @@ export default function MailItem({ mail: item }: { mail: Email }) {
               </div>
               <div className={cn(
                 'text-sm truncate',
-                isRead ? 'font-medium' : 'font-semibold'
-              )}>
+                isRead ? 'font-medium' : 'font-semibold',
+              )}
+              >
                 {item.from.name || item.from.address}
               </div>
             </div>
@@ -63,8 +64,9 @@ export default function MailItem({ mail: item }: { mail: Email }) {
           <div className="space-y-1">
             <div className={cn(
               'text-sm line-clamp-1',
-              isRead ? 'font-medium' : 'font-semibold'
-            )}>
+              isRead ? 'font-medium' : 'font-semibold',
+            )}
+            >
               {item.subject || 'No subject'}
             </div>
             <div className="text-xs text-muted-foreground line-clamp-2">
@@ -76,4 +78,3 @@ export default function MailItem({ mail: item }: { mail: Email }) {
     </a>
   )
 }
-

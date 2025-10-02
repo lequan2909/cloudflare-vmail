@@ -1,12 +1,12 @@
-import { useEffect, useRef } from 'react'
 import Prism from 'prismjs'
+import { useEffect, useRef } from 'react'
+import { cn } from '@/lib/utils'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/components/prism-typescript'
 import 'prismjs/components/prism-python'
 import 'prismjs/components/prism-bash'
 import 'prismjs/components/prism-json'
 import '@/styles/prism-theme.css'
-import { cn } from '@/lib/utils'
 
 interface CodeBlockProps {
   code: string

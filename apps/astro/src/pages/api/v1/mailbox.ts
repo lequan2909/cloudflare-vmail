@@ -26,7 +26,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     try {
       const body = await request.json() as { domain?: string }
       domain = body.domain
-    } catch {
+    }
+    catch {
       // If no body or invalid JSON, use default domain
     }
 
@@ -42,7 +43,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Generate access token
     const accessToken = await genMailboxAccessToken(
       mailboxAddress,
-      locals.runtime.env.JWT_SECRET
+      locals.runtime.env.JWT_SECRET,
     )
 
     return new Response(
@@ -52,16 +53,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
           address: mailboxAddress,
           token: accessToken,
           expiresIn: '7 days',
-          createdAt: new Date().toISOString()
-        }
+          createdAt: new Date().toISOString(),
+        },
       }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } }
+      { status: 201, headers: { 'Content-Type': 'application/json' } },
     )
-  } catch (error) {
+  }
+  catch (error) {
     console.error('API Error:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
     )
   }
 }

@@ -37,20 +37,22 @@ const OTP_KEYWORDS = [
  * Extract OTP codes from text
  */
 export function extractOTP(text: string): string[] {
-  if (!text) return []
+  if (!text)
+    return []
 
   const lowerText = text.toLowerCase()
   const hasOTPContext = OTP_KEYWORDS.some(keyword => lowerText.includes(keyword))
 
-  if (!hasOTPContext) return []
+  if (!hasOTPContext)
+    return []
 
   const codes = new Set<string>()
 
   // Try each pattern
-  OTP_PATTERNS.forEach(pattern => {
+  OTP_PATTERNS.forEach((pattern) => {
     const matches = text.match(pattern)
     if (matches) {
-      matches.forEach(code => {
+      matches.forEach((code) => {
         // Clean up and validate
         const cleaned = code.replace(/[\s-]/g, '')
         if (cleaned.length >= 4 && cleaned.length <= 8) {
@@ -69,16 +71,17 @@ export function extractOTP(text: string): string[] {
 export function highlightOTP(html: string): string {
   const otpCodes = extractOTP(html.replace(/<[^>]*>/g, ''))
 
-  if (otpCodes.length === 0) return html
+  if (otpCodes.length === 0)
+    return html
 
   let highlighted = html
 
-  otpCodes.forEach(code => {
+  otpCodes.forEach((code) => {
     // Match the code with word boundaries
     const regex = new RegExp(`\\b${code}\\b`, 'g')
     highlighted = highlighted.replace(
       regex,
-      `<mark class="otp-highlight" data-otp="${code}">${code}</mark>`
+      `<mark class="otp-highlight" data-otp="${code}">${code}</mark>`,
     )
   })
 
@@ -88,7 +91,7 @@ export function highlightOTP(html: string): string {
 /**
  * Highlight OTP codes in plain text
  */
-export function highlightOTPInText(text: string): { text: string; codes: string[] } {
+export function highlightOTPInText(text: string): { text: string, codes: string[] } {
   const codes = extractOTP(text)
 
   if (codes.length === 0) {
@@ -97,7 +100,7 @@ export function highlightOTPInText(text: string): { text: string; codes: string[
 
   let highlighted = text
 
-  codes.forEach(code => {
+  codes.forEach((code) => {
     const regex = new RegExp(`\\b${code}\\b`, 'g')
     highlighted = highlighted.replace(regex, `**${code}**`)
   })
