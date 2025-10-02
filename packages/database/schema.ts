@@ -69,3 +69,20 @@ export const mailboxes = sqliteTable("mailboxes", {
 export const insertMailboxSchema = createInsertSchema(mailboxes);
 export type InsertMailbox = z.infer<typeof insertMailboxSchema>;
 
+// API Keys table for developer API access
+export const apiKeys = sqliteTable("api_keys", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  name: text("name").notNull(),
+  mailboxAddress: text("mailbox_address"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  rateLimit: integer("rate_limit").notNull().default(100), // requests per minute
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys);
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
+

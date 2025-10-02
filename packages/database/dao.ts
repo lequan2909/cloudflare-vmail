@@ -1,6 +1,6 @@
 import { count, desc, eq, and } from "drizzle-orm";
 import { DrizzleD1Database } from 'drizzle-orm/d1'
-import { emails, InsertEmail, mailboxes, InsertMailbox } from "./schema"
+import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey } from "./schema"
 
 export async function insertEmail(db: DrizzleD1Database, email: InsertEmail) {
   try {
@@ -331,3 +331,135 @@ export async function extendMailboxExpiration(
     return { success: false, error: 'Failed to extend expiration' };
   }
 }
+
+// ============ API Key Functions ============
+
+// Generate a random API key
+function generateApiKey(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return 'vmails_' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+// Generate unique ID
+function generateId(): string {
+  return crypto.randomUUID();
+}
+
+// Create API key
+export async function createApiKey(
+  db: DrizzleD1Database,
+  name: string,
+  mailboxAddress?: string,
+  expiresInDays?: number
+): Promise<{ success: boolean; apiKey?: string; error?: string }> {
+  try {
+    const id = generateId();
+    const key = generateApiKey();
+    const now = new Date();
+    const expiresAt = expiresInDays
+      ? new Date(now.getTime() + expiresInDays * 24 * 60 * 60 * 1000)
+      : null;
+
+    await db.insert(apiKeys).values({
+      id,
+      key,
+      name,
+      mailboxAddress: mailboxAddress || null,
+      createdAt: now,
+      expiresAt,
+      lastUsedAt: null,
+      isActive: true,
+      rateLimit: 100
+    }).execute();
+
+    return { success: true, apiKey: key };
+  } catch (e) {
+    console.error(e);
+    return { success: false, error: 'Failed to create API key' };
+  }
+}
+
+// Verify API key
+export async function verifyApiKey(
+  db: DrizzleD1Database,
+  key: string
+): Promise<{ valid: boolean; apiKey?: typeof apiKeys.$inferSelect; error?: string }> {
+  try {
+    const result = await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.key, key))
+      .limit(1)
+      .all();
+
+    if (result.length === 0) {
+      return { valid: false, error: 'Invalid API key' };
+    }
+
+    const apiKey = result[0];
+    if (!apiKey) {
+      return { valid: false, error: 'Invalid API key' };
+    }
+
+    // Check if active
+    if (!apiKey.isActive) {
+      return { valid: false, error: 'API key is inactive' };
+    }
+
+    // Check if expired
+    if (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date()) {
+      return { valid: false, error: 'API key has expired' };
+    }
+
+    // Update last used timestamp
+    await db
+      .update(apiKeys)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(apiKeys.key, key))
+      .execute();
+
+    return { valid: true, apiKey };
+  } catch (e) {
+    console.error(e);
+    return { valid: false, error: 'Failed to verify API key' };
+  }
+}
+
+// Revoke API key
+export async function revokeApiKey(
+  db: DrizzleD1Database,
+  key: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db
+      .update(apiKeys)
+      .set({ isActive: false })
+      .where(eq(apiKeys.key, key))
+      .execute();
+
+    return { success: true };
+  } catch (e) {
+    console.error(e);
+    return { success: false, error: 'Failed to revoke API key' };
+  }
+}
+
+// Get all API keys for a mailbox
+export async function getApiKeysByMailbox(
+  db: DrizzleD1Database,
+  mailboxAddress: string
+) {
+  try {
+    return await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.mailboxAddress, mailboxAddress))
+      .orderBy(desc(apiKeys.createdAt))
+      .all();
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+

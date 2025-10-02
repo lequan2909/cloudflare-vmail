@@ -56,8 +56,8 @@ const Env = Astro.locals.runtime.env
   </head>
   <body>
     <slot />
-    <div transition:name="dock">
-      <Dock siteName={String(Env.SITE_NAME)} client:load />
+    <div transition:name="dock" transition:persist>
+      <Dock siteName={String(Env.SITE_NAME)} client:only="react" />
     </div>
   </body>
 </html>
@@ -215,6 +215,106 @@ const Env = Astro.locals.runtime.env
 
   ::view-transition-new(inbox-container) {
     animation-name: content-slide-in;
+  }
+
+  /* Documentation page transitions */
+  ::view-transition-old(docs-content),
+  ::view-transition-new(docs-content) {
+    animation-duration: 0.4s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+  }
+
+  ::view-transition-old(docs-content) {
+    animation-name: content-slide-out;
+  }
+
+  ::view-transition-new(docs-content) {
+    animation-name: content-slide-in;
+  }
+
+  /* Documentation TOC - keep in place with subtle fade */
+  ::view-transition-old(docs-toc),
+  ::view-transition-new(docs-toc) {
+    animation-duration: 0.3s;
+    animation-timing-function: ease-in-out;
+  }
+
+  ::view-transition-old(docs-toc) {
+    animation-name: fade-out;
+  }
+
+  ::view-transition-new(docs-toc) {
+    animation-name: fade-in;
+  }
+
+  /* Scale animation for interactive elements */
+  @keyframes scale-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-out {
+    from {
+      transform: scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+  }
+
+  /* Slide from right for modals/dialogs */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out-right {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(20px);
+      opacity: 0;
+    }
+  }
+
+  /* Slide from left */
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out-left {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-20px);
+      opacity: 0;
+    }
   }
 
   /* Respect user's motion preferences */

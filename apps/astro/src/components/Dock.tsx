@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { Home, Info, Shield, FileText, Github, Sun, Moon } from 'lucide-react'
+import { Home, Info, Shield, FileText, Github, Sun, Moon, Sparkles, Code } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
@@ -10,10 +10,20 @@ interface DockProps {
 
 export function Dock({ siteName = 'VMails' }: DockProps) {
   const [theme, setTheme] = React.useState<'light' | 'dark' | 'system'>('light')
+  const [activeHref, setActiveHref] = React.useState<string>('')
 
   React.useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark')
     setTheme(isDarkMode ? 'dark' : 'light')
+    setActiveHref(window.location.pathname)
+
+    // Update active href on navigation
+    const handleNavigation = () => {
+      setActiveHref(window.location.pathname)
+    }
+
+    document.addEventListener('astro:page-load', handleNavigation)
+    return () => document.removeEventListener('astro:page-load', handleNavigation)
   }, [])
 
   const toggleTheme = () => {
@@ -24,35 +34,15 @@ export function Dock({ siteName = 'VMails' }: DockProps) {
   }
 
   const dockItems = [
-    {
-      label: 'Home',
-      href: '/',
-      icon: Home,
-      color: 'hover:bg-blue-500/20 hover:text-blue-600 dark:hover:text-blue-400',
-    },
-    {
-      label: 'About',
-      href: '/about',
-      icon: Info,
-      color: 'hover:bg-green-500/20 hover:text-green-600 dark:hover:text-green-400',
-    },
-    {
-      label: 'Privacy',
-      href: '/privacy',
-      icon: Shield,
-      color: 'hover:bg-purple-500/20 hover:text-purple-600 dark:hover:text-purple-400',
-    },
-    {
-      label: 'Terms',
-      href: '/terms',
-      icon: FileText,
-      color: 'hover:bg-orange-500/20 hover:text-orange-600 dark:hover:text-orange-400',
-    },
+    { label: 'Home', href: '/', icon: Home },
+    { label: 'API Docs', href: '/api-docs', icon: Code },
+    { label: 'About', href: '/about', icon: Info },
+    { label: 'Privacy', href: '/privacy', icon: Shield },
+    { label: 'Terms', href: '/terms', icon: FileText },
     {
       label: 'GitHub',
       href: 'https://github.com/MiraHikari/cloudflare-vmail',
       icon: Github,
-      color: 'hover:bg-gray-500/20 hover:text-gray-600 dark:hover:text-gray-400',
       external: true,
     },
   ]
@@ -60,42 +50,50 @@ export function Dock({ siteName = 'VMails' }: DockProps) {
   return (
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
+        initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center gap-2 bg-background/80 backdrop-blur-xl border border-border rounded-2xl px-4 py-3 shadow-lg"
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="flex items-center gap-1 bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl px-3 py-3 shadow-lg"
       >
         {/* Logo */}
-        <div className="flex items-center gap-2 mr-2 pr-2 border-r border-border">
-          <div className="h-6 w-6 bg-primary rounded-lg flex-shrink-0" />
-          <span className="text-sm font-semibold text-primary hidden sm:block">{siteName}</span>
+        <div className="flex items-center gap-2 mr-1 pr-3 border-r border-border/50">
+          <div className="h-7 w-7 flex-shrink-0 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <span className="text-sm font-bold text-primary hidden sm:block">
+            {siteName}
+          </span>
         </div>
 
         {/* Navigation Items */}
-        {dockItems.map((item, index) => (
-          <DockItem
-            key={index}
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            color={item.color}
-            external={item.external}
-          />
-        ))}
+        <div className="flex items-center gap-1">
+          {dockItems.map((item) => (
+            <DockItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              label={item.label}
+              external={item.external}
+              isActive={activeHref === item.href}
+            />
+          ))}
+        </div>
 
         {/* Theme Toggle */}
-        <div className="ml-2 pl-2 border-l border-border">
-          <button
+        <div className="ml-1 pl-3 border-l border-border/50">
+          <motion.button
             onClick={toggleTheme}
-            className={cn(
-              'p-2 rounded-xl transition-all duration-200',
-              'hover:bg-yellow-500/20 hover:text-yellow-600 dark:hover:text-yellow-400',
-              'hover:scale-110 active:scale-95'
-            )}
+            className="p-2.5 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
             title="Toggle theme"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+            {theme === 'dark' ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </motion.button>
         </div>
       </motion.div>
     </div>
@@ -106,26 +104,50 @@ interface DockItemProps {
   href: string
   icon: React.ComponentType<{ className?: string }>
   label: string
-  color: string
   external?: boolean
+  isActive?: boolean
 }
 
-function DockItem({ href, icon: Icon, label, color, external }: DockItemProps) {
+function DockItem({ href, icon: Icon, label, external, isActive }: DockItemProps) {
+  const [showTooltip, setShowTooltip] = React.useState(false)
+
   return (
-    <motion.a
-      href={href}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noopener noreferrer' : undefined}
-      className={cn(
-        'p-2 rounded-xl transition-all duration-200',
-        'text-muted-foreground hover:scale-110 active:scale-95',
-        color
-      )}
-      title={label}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
+    <div
+      className="relative"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
     >
-      <Icon className="h-5 w-5" />
-    </motion.a>
+      <motion.a
+        href={href}
+        target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+        className={cn(
+          'flex items-center justify-center p-2.5 rounded-xl transition-colors',
+          isActive
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+        )}
+        title={label}
+        whileHover={{ scale: 1.05, y: -2 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+      >
+        <Icon className="h-5 w-5" />
+      </motion.a>
+
+      {/* Tooltip */}
+      {showTooltip && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 5 }}
+          transition={{ duration: 0.15 }}
+          className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg whitespace-nowrap pointer-events-none"
+        >
+          {label}
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-foreground rotate-45" />
+        </motion.div>
+      )}
+    </div>
   )
 }

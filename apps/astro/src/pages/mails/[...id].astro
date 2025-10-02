@@ -3,12 +3,13 @@ import Layout from '@/layouts/Layout.astro'
 import PageHeader from '@/components/PageHeader.astro'
 import * as DAO from 'database/dao'
 import { getCloudflareD1 } from 'database/db'
-import { format } from 'date-fns'
 import type { MailboxSession } from '@/actions'
 import { encodeJWTSecret } from '@/lib/utils'
 import * as jose from 'jose'
 import { OTPDisplay } from '@/components/OTPDisplay'
-import { extractOTP, highlightOTP } from '@/lib/otp'
+import { extractOTP } from '@/lib/otp'
+import { EmailHeaders } from '@/components/EmailHeaders'
+import { EmailViewer } from '@/components/EmailViewer'
 
 const { id } = Astro.params as { id: string }
 
@@ -154,66 +155,15 @@ const Env = Astro.locals.runtime.env
         </div>
       ) : (
         data && isAuthorized && (
-          <div
-            class="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:text-primary/80"
-            transition:name="email-detail"
-          >
-            <div class="bg-muted/30 rounded-lg p-8">
-              <!-- Email Header -->
-              <div class="flex items-start justify-between mb-6">
-                <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <svg class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="font-medium text-foreground">{data.from.name}</div>
-                    <div class="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      <span>{data.from.address}</span>
-                    </div>
-                  </div>
-                </div>
-                {
-                  data.date && (
-                    <div class="text-sm text-muted-foreground flex items-center gap-1 flex-shrink-0">
-                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      <time datetime={data.date}>
-                        {format(new Date(data.date), 'MMM d, yyyy • h:mm a')}
-                      </time>
-                    </div>
-                  )
-                }
-              </div>
+          <div class="space-y-6" transition:name="email-detail">
+            {/* Email Headers */}
+            <EmailHeaders email={data} client:load />
 
-              <!-- Email metadata -->
-              <div class="flex items-center gap-4 text-xs text-muted-foreground mb-6 pb-4 border-b border-border">
-                <div class="flex items-center gap-1">
-                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                  </svg>
-                  <span>ID: {data.id}</span>
-                </div>
-              </div>
+            {/* OTP Detection */}
+            {otpCodes.length > 0 && <OTPDisplay codes={otpCodes} client:load />}
 
-              <!-- OTP Detection -->
-              {otpCodes.length > 0 && <OTPDisplay codes={otpCodes} client:load />}
-
-              <!-- Email Content -->
-              <div class="email-content">
-                <article
-                  class="prose prose-sm max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:text-primary/80 prose-blockquote:text-muted-foreground prose-blockquote:border-l-primary/20"
-                  set:html={data.html ||
-                    data.text?.replace(/\n/g, '<br>') ||
-                    '<p class="text-muted-foreground italic">No content available</p>'}
-                />
-              </div>
-            </div>
+            {/* Email Viewer with multiple modes */}
+            <EmailViewer email={data} client:load />
           </div>
         )
       )

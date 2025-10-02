@@ -5,7 +5,8 @@
       "Bash(cat:*)",
       "Bash(pnpm astro check:*)",
       "Bash(pnpm type-check:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(pnpm add:*)"
     ]
   },
   "outputStyle": "default"

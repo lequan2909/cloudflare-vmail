@@ -34,3 +34,25 @@ export async function genToken(str: string, secret: string) {
     .setExpirationTime('24h')
     .sign(encodeJWTSecret(secret))
 }
+
+// Generate API access token for a mailbox
+export async function genMailboxAccessToken(mailboxAddress: string, secret: string) {
+  return await new jose.SignJWT({ mailbox: mailboxAddress })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d') // Token valid for 7 days
+    .sign(encodeJWTSecret(secret))
+}
+
+// Verify API access token
+export async function verifyMailboxAccessToken(token: string, secret: string): Promise<{ valid: boolean; mailbox?: string; error?: string }> {
+  try {
+    const { payload } = await jose.jwtVerify(token, encodeJWTSecret(secret))
+    if (typeof payload.mailbox === 'string') {
+      return { valid: true, mailbox: payload.mailbox }
+    }
+    return { valid: false, error: 'Invalid token payload' }
+  } catch (error) {
+    return { valid: false, error: error instanceof Error ? error.message : 'Token verification failed' }
+  }
+}

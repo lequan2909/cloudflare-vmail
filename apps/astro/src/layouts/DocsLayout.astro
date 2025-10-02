@@ -1,0 +1,224 @@
+---
+import PageHeader from '@/components/PageHeader.astro'
+import Layout from '@/layouts/Layout.astro'
+import { ChevronRight } from 'lucide-react'
+
+interface Props {
+  title: string
+  description: string
+  pageTitle: string
+  lastUpdated?: string
+}
+
+const { title, description, pageTitle, lastUpdated } = Astro.props
+---
+
+<Layout title={title} description={description}>
+  <PageHeader title={pageTitle} description={description} showBackButton={true} />
+
+  <main class='max-w-7xl mx-auto px-6 py-6' transition:name='main-content'>
+    <div class='grid grid-cols-1 lg:grid-cols-12 gap-8'>
+      <!-- Table of Contents - Sidebar -->
+      <aside class='lg:col-span-3 hidden lg:block' transition:name='docs-toc'>
+        <div class='sticky top-6'>
+          <nav class='bg-card border border-border rounded-lg p-6 space-y-4'>
+            <h3 class='text-sm font-semibold text-foreground uppercase tracking-wide mb-4'>
+              On This Page
+            </h3>
+            <div id='toc-container' class='space-y-2'></div>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <article class='lg:col-span-9' transition:name='docs-content'>
+        <div class='bg-card border border-border rounded-lg shadow-sm overflow-hidden'>
+          <div class='p-8 lg:p-12'>
+            <div
+              class='prose max-w-none dark:prose-invert
+                     transition-all duration-300'>
+              <slot />
+            </div>
+
+            {
+              lastUpdated && (
+                <div class='mt-12 pt-6 border-t border-border'>
+                  <p class='text-sm text-muted-foreground flex items-center gap-2'>
+                    <svg class='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                      <path
+                        stroke-linecap='round'
+                        stroke-linejoin='round'
+                        stroke-width='2'
+                        d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                      />
+                    </svg>
+                    Last updated: {lastUpdated}
+                  </p>
+                </div>
+              )
+            }
+          </div>
+        </div>
+
+        <!-- Page Navigation - Bottom -->
+        <div class='mt-8 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div id='prev-page'></div>
+          <div id='next-page' class='md:ml-auto'></div>
+        </div>
+      </article>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  // Generate table of contents from headings
+  function generateTOC() {
+    const article = document.querySelector('article')
+    const tocContainer = document.getElementById('toc-container')
+
+    if (!article || !tocContainer) return
+
+    const headings = article.querySelectorAll('h2[id], h3[id]')
+    const tocItems: string[] = []
+
+    headings.forEach(heading => {
+      const id = heading.id
+      const text = heading.textContent || ''
+      const level = heading.tagName.toLowerCase()
+
+      const indent = level === 'h3' ? 'ml-4' : ''
+      const fontSize = level === 'h3' ? 'text-sm' : 'text-sm font-medium'
+
+      tocItems.push(`
+        <a href="#${id}"
+           class="${indent} ${fontSize} text-muted-foreground hover:text-foreground transition-colors duration-200 flex items-center gap-2 py-1.5 group"
+           data-toc-link>
+          <svg class="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+          <span class="line-clamp-1">${text}</span>
+        </a>
+      `)
+    })
+
+    if (tocItems.length > 0) {
+      tocContainer.innerHTML = tocItems.join('')
+    } else {
+      const parent = tocContainer.parentElement
+      if (parent) parent.style.display = 'none'
+    }
+  }
+
+  // Highlight active section in TOC
+  function highlightActiveTOC() {
+    const headings = document.querySelectorAll('article h2[id], article h3[id]')
+    const tocLinks = document.querySelectorAll('[data-toc-link]')
+
+    if (headings.length === 0 || tocLinks.length === 0) return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id
+            tocLinks.forEach(link => {
+              const href = link.getAttribute('href')
+              if (href === `#${id}`) {
+                tocLinks.forEach(l => l.classList.remove('text-foreground', 'font-medium'))
+                link.classList.add('text-foreground', 'font-medium')
+              }
+            })
+          }
+        })
+      },
+      { rootMargin: '-100px 0px -80% 0px' }
+    )
+
+    headings.forEach(heading => observer.observe(heading))
+  }
+
+  // Smooth scroll for TOC links
+  function setupSmoothScroll() {
+    const tocLinks = document.querySelectorAll('[data-toc-link]')
+    tocLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault()
+        const href = link.getAttribute('href')
+        if (href) {
+          const target = document.querySelector(href)
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            // Update URL without jumping
+            history.pushState(null, '', href)
+          }
+        }
+      })
+    })
+  }
+
+  // Initialize on page load
+  function initDocs() {
+    generateTOC()
+    highlightActiveTOC()
+    setupSmoothScroll()
+  }
+
+  // Run on initial load
+  document.addEventListener('DOMContentLoaded', initDocs)
+
+  // Re-run on Astro page transitions
+  document.addEventListener('astro:page-load', initDocs)
+</script>
+
+<style>
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar for TOC */
+  #toc-container {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  #toc-container::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  #toc-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #toc-container::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
+
+  #toc-container::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  /* Animate TOC items */
+  [data-toc-link] {
+    position: relative;
+  }
+
+  [data-toc-link]::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 0;
+    background: hsl(var(--primary));
+    transition: height 0.2s ease;
+  }
+
+  [data-toc-link].text-foreground::before {
+    height: 100%;
+  }
+</style>
