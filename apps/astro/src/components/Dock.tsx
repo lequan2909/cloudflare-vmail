@@ -35,10 +35,10 @@ export function Dock({ siteName = 'VMails' }: DockProps) {
 
   const dockItems = [
     { label: 'Home', href: '/', icon: Home },
-    { label: 'API Docs', href: '/api-docs', icon: Code },
-    { label: 'About', href: '/about', icon: Info },
-    { label: 'Privacy', href: '/privacy', icon: Shield },
-    { label: 'Terms', href: '/terms', icon: FileText },
+    { label: 'API Docs', href: '/docs/api-docs', icon: Code },
+    { label: 'About', href: '/docs/about', icon: Info },
+    { label: 'Privacy', href: '/docs/privacy', icon: Shield },
+    { label: 'Terms', href: '/docs/terms', icon: FileText },
     {
       label: 'GitHub',
       href: 'https://github.com/MiraHikari/cloudflare-vmail',

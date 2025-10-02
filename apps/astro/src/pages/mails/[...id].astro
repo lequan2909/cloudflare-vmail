@@ -46,8 +46,8 @@ try {
         if (savedMailbox.mailbox === data.messageTo) {
           isAuthorized = true
 
-          // Extract OTP codes from email content
-          const content = data.html || data.text || ''
+          // Extract OTP codes from plain text for better reliability
+          const content = data.text || data.html || ''
           otpCodes = extractOTP(content)
         }
  else {
@@ -80,100 +80,114 @@ const Env = Astro.locals.runtime.env
     backUrl="/"
   />
 
-  <main class="max-w-4xl mx-auto px-6 py-6" transition:name="main-content">
-    {
-      error ? (
-        <div class="flex flex-col items-center justify-center text-center p-8">
-          <div class="bg-card border border-border rounded-lg shadow-sm p-6 max-w-lg w-full">
-            {error.includes('Access denied')
-? (
-              <div>
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 dark:bg-amber-950/20 flex items-center justify-center">
-                  <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-foreground mb-2">Email Protected</h3>
-                <p class="text-sm text-muted-foreground mb-6">
-                  This email content is protected and can only be viewed by the temporary mailbox owner.
-                </p>
+  <main class="min-h-screen bg-background">
+    <div class="mx-auto px-6 md:px-28 py-6">
+      {
+        error ? (
+          <div class="flex flex-col items-center justify-center text-center p-8 min-h-[70vh] animate-in fade-in duration-500">
+            <div class="bg-card border border-border rounded-lg shadow-sm p-8 max-w-lg w-full mx-auto">
+              {error.includes('Access denied')
+  ? (
+                <div>
+                  <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <h3 class="text-2xl font-bold text-foreground mb-3">Email Protected</h3>
+                  <p class="text-sm text-muted-foreground mb-8">
+                    This email content is protected and can only be viewed by the temporary mailbox owner.
+                  </p>
 
-                <div class="bg-muted/30 rounded-lg p-4 mb-6 text-left">
-                  <h4 class="font-medium text-foreground mb-3">To access this email:</h4>
-                  <ul class="text-sm text-muted-foreground space-y-2">
-                    <li class="flex items-start gap-2">
-                      <span class="text-primary mt-0.5">•</span>
-                      <span>Use the "Retrieve Mailbox" feature on the homepage</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                      <span class="text-primary mt-0.5">•</span>
-                      <span>Enter your saved Email ID to restore mailbox access</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                      <span class="text-primary mt-0.5">•</span>
-                      <span>Only the original mailbox owner can view protected content</span>
-                    </li>
-                  </ul>
-
-                  <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md">
-                    <div class="flex items-start gap-2">
-                      <svg class="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  <div class="bg-muted/30 rounded-lg p-5 mb-6 text-left">
+                    <h4 class="font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p class="text-xs text-amber-700 dark:text-amber-300">
-                        <strong>Important:</strong> Without your Email ID, you cannot access your temporary mailbox again!
-                      </p>
+                      To access this email:
+                    </h4>
+                    <ul class="text-sm text-muted-foreground space-y-3">
+                      <li class="flex items-start gap-3">
+                        <span class="text-primary mt-0.5 text-lg">•</span>
+                        <span>Use the "Retrieve Mailbox" feature on the homepage</span>
+                      </li>
+                      <li class="flex items-start gap-3">
+                        <span class="text-primary mt-0.5 text-lg">•</span>
+                        <span>Enter your saved Email ID to restore mailbox access</span>
+                      </li>
+                      <li class="flex items-start gap-3">
+                        <span class="text-primary mt-0.5 text-lg">•</span>
+                        <span>Only the original mailbox owner can view protected content</span>
+                      </li>
+                    </ul>
+
+                    <div class="mt-5 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <p class="text-xs text-amber-700 dark:text-amber-300">
+                          <strong>Important:</strong> Without your Email ID, you cannot access your temporary mailbox again!
+                        </p>
+                      </div>
                     </div>
                   </div>
+
+                  <a
+                    href="/"
+                    class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all text-sm font-semibold shadow-md hover:shadow-lg"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    Retrieve Mailbox
+                  </a>
                 </div>
-
-                <a
-                  href="/"
-                  class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
-                >
-                  <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                  </svg>
-                  Retrieve Mailbox
-                </a>
-              </div>
-            )
-: (
-              <div>
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <svg class="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              )
+  : (
+                <div>
+                  <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 class="text-2xl font-bold text-foreground mb-3">Email Not Found</h3>
+                  <p class="text-sm text-muted-foreground mb-8">{error}</p>
+                  <a
+                    href="/"
+                    class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all text-sm font-semibold shadow-md hover:shadow-lg"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                    </svg>
+                    Go to Inbox
+                  </a>
                 </div>
-                <h3 class="text-xl font-semibold text-foreground mb-2">Email Not Found</h3>
-                <p class="text-sm text-muted-foreground mb-6">{error}</p>
-                <a
-                  href="/"
-                  class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
-                >
-                  <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                  </svg>
-                  Go to Inbox
-                </a>
+              )}
+            </div>
+          </div>
+        ) : (
+          data && isAuthorized && (
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column: Email Info (narrow on lg+) */}
+              <div class="lg:col-span-1 space-y-6 animate-in slide-in-from-left duration-700">
+                {/* OTP Detection - Prominent position */}
+                {otpCodes.length > 0 && (
+                  <OTPDisplay codes={otpCodes} client:load />
+                )}
+
+                {/* Email Information Card */}
+                <EmailHeaders email={data} client:load />
               </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        data && isAuthorized && (
-          <div class="space-y-6" transition:name="email-detail">
-            {/* Email Headers */}
-            <EmailHeaders email={data} client:load />
 
-            {/* OTP Detection */}
-            {otpCodes.length > 0 && <OTPDisplay codes={otpCodes} client:load />}
-
-            {/* Email Viewer with multiple modes */}
-            <EmailViewer email={data} client:load />
-          </div>
+              {/* Right Column: Email Viewer (wide on lg+) */}
+              <div class="lg:col-span-2 animate-in slide-in-from-right duration-700">
+                <EmailViewer email={data} client:only="react" />
+              </div>
+            </div>
+          )
         )
-      )
-    }
+      }
+    </div>
   </main>
 </Layout>

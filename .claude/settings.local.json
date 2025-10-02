@@ -7,7 +7,9 @@
       "Bash(pnpm type-check:*)",
       "mcp__ide__getDiagnostics",
       "Bash(pnpm add:*)",
-      "Bash(pnpm lint)"
+      "Bash(pnpm lint)",
+      "WebSearch",
+      "WebFetch(domain:docs.astro.build)"
     ]
   },
   "outputStyle": "default"

@@ -27,7 +27,7 @@ export default {
 			const mail = await new PostalMime().parse(rawText);
 			const now = new Date();
 			const db = getCloudflareD1(env.DB);
-			//@ts-expect-error mail.address.from 可能解析不出来，无伤大雅，跳过
+			//@ts-expect-error mail.address.from not a problem
 			const newEmail: InsertEmail = {
 				id: nanoid(),
 				messageFrom,

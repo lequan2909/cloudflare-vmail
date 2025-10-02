@@ -1,4 +1,5 @@
 import cloudflare from '@astrojs/cloudflare'
+import mdx from '@astrojs/mdx'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
 import icon from 'astro-icon'
@@ -16,8 +17,16 @@ export default defineConfig({
     imageService: 'compile',
   }),
 
+  redirects: {
+    '/about': { status: 301, destination: '/docs/about' },
+    '/privacy': { status: 301, destination: '/docs/privacy' },
+    '/terms': { status: 301, destination: '/docs/terms' },
+    '/api-docs': { status: 301, destination: '/docs/api-docs' },
+  },
+
   integrations: [
     react(),
+    mdx(),
     icon({
       include: {
         ic: ['twotone-shield', 'twotone-info', 'twotone-timer'],

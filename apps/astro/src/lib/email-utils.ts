@@ -83,11 +83,11 @@ export function buildRawMime(email: {
   id?: string
   from?: { name?: string, address: string }
   messageTo?: string
-  subject?: string
-  date?: string
+  subject?: string | null
+  date?: string | null
   messageId?: string
-  text?: string
-  html?: string
+  text?: string | null
+  html?: string | null
 }): string {
   const lines: string[] = []
 

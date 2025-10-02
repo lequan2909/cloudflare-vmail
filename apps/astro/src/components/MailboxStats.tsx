@@ -18,7 +18,7 @@ export function MailboxStats() {
 
   return (
     <div className="grid grid-cols-3 gap-3">
-      <Card>
+      <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -30,7 +30,7 @@ export function MailboxStats() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -42,7 +42,7 @@ export function MailboxStats() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center justify-between">
             <div>

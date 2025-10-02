@@ -19,20 +19,20 @@ interface EmailHeadersProps {
     messageTo?: string
     headers?: Header[]
     from?: Address
-    sender?: Address
-    replyTo?: Address[]
-    deliveredTo?: string
-    returnPath?: string
-    to?: Address[]
-    cc?: Address[]
-    bcc?: Address[]
-    subject?: string
-    messageId?: string
-    inReplyTo?: string
-    references?: string
-    date?: string
-    createdAt?: Date | string
-    updatedAt?: Date | string
+    sender?: Address | null
+    replyTo?: Address[] | null
+    deliveredTo?: string | null
+    returnPath?: string | null
+    to?: Address[] | null
+    cc?: Address[] | null
+    bcc?: Address[] | null
+    subject?: string | null
+    messageId?: string | null
+    inReplyTo?: string | null
+    references?: string | null
+    date?: string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
     isRead?: boolean
     readAt?: Date | string | null
     priority?: string
@@ -79,92 +79,6 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
       })
     }
   }
-
-  // Primary Headers - Always Visible
-  const primaryHeaders: HeaderItem[] = [
-    {
-      label: 'From',
-      value: formatAddress(email.from),
-      copyable: true,
-    },
-    {
-      label: 'To',
-      value: email.messageTo || 'Unknown',
-      copyable: true,
-    },
-    {
-      label: 'Subject',
-      value: email.subject || '(No subject)',
-      copyable: true,
-    },
-    {
-      label: 'Date',
-      value: email.date
-        ? format(new Date(email.date), 'PPpp')
-        : email.createdAt
-          ? format(new Date(email.createdAt), 'PPpp')
-          : 'Unknown',
-      copyable: false,
-    },
-  ]
-
-  // Recipient Details
-  const recipientHeaders: HeaderItem[] = [
-    {
-      label: 'To (Parsed)',
-      value: formatAddresses(email.to),
-      copyable: true,
-    },
-    {
-      label: 'CC',
-      value: formatAddresses(email.cc),
-      copyable: true,
-    },
-    {
-      label: 'BCC',
-      value: formatAddresses(email.bcc),
-      copyable: true,
-    },
-    {
-      label: 'Reply-To',
-      value: formatAddresses(email.replyTo),
-      copyable: true,
-    },
-    {
-      label: 'Sender',
-      value: formatAddress(email.sender),
-      copyable: true,
-    },
-  ]
-
-  // Technical Headers
-  const technicalHeaders: HeaderItem[] = [
-    {
-      label: 'Message-ID',
-      value: email.messageId || 'N/A',
-      copyable: true,
-    },
-    {
-      label: 'In-Reply-To',
-      value: email.inReplyTo || 'N/A',
-      copyable: true,
-    },
-    {
-      label: 'References',
-      value: email.references || 'N/A',
-      copyable: true,
-    },
-    {
-      label: 'Return-Path',
-      value: email.returnPath || 'N/A',
-      copyable: true,
-    },
-    {
-      label: 'Delivered-To',
-      value: email.deliveredTo || 'N/A',
-      copyable: true,
-    },
-  ]
 
   // Database Metadata
   const metadataHeaders: HeaderItem[] = [
@@ -217,104 +131,188 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
   ]
 
   return (
-    <div className="bg-muted/30 rounded-lg border border-border overflow-hidden">
-      {/* Primary Headers - Always Visible */}
-      <div className="p-4 space-y-3">
-        {primaryHeaders.map(header => (
-          <HeaderRow
-            key={header.label}
-            label={header.label}
-            value={header.value}
-            copyable={header.copyable}
-            copied={copiedField === header.label}
-            onCopy={() => handleCopy(header.value, header.label)}
-          />
-        ))}
+    <div className="space-y-4">
+      {/* Modern Card-based Primary Headers */}
+      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+        <div className="p-6 space-y-4">
+          {/* From Section */}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                From
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-base font-semibold text-foreground break-all flex-1">
+                  {formatAddress(email.from)}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0 hover:bg-primary/10"
+                  onClick={() => handleCopy(formatAddress(email.from), 'From')}
+                  title="Copy sender address"
+                >
+                  {copiedField === 'From'
+                    ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )
+                    : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* To Section */}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                To
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-base font-semibold text-foreground break-all flex-1 font-mono">
+                  {email.messageTo || 'Unknown'}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0 hover:bg-blue-500/10"
+                  onClick={() => handleCopy(email.messageTo || 'Unknown', 'To')}
+                  title="Copy recipient address"
+                >
+                  {copiedField === 'To'
+                    ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )
+                    : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Subject Section */}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                Subject
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-base font-semibold text-foreground break-all flex-1">
+                  {email.subject || '(No subject)'}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0 hover:bg-purple-500/10"
+                  onClick={() => handleCopy(email.subject || '(No subject)', 'Subject')}
+                  title="Copy subject"
+                >
+                  {copiedField === 'Subject'
+                    ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )
+                    : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-px bg-border" />
+
+          {/* Date Section */}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                Date
+              </div>
+              <div className="text-base font-medium text-foreground">
+                {email.date
+                  ? format(new Date(email.date), 'PPpp')
+                  : email.createdAt
+                    ? format(new Date(email.createdAt), 'PPpp')
+                    : 'Unknown'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Recipient Details - Collapsible */}
-      <CollapsibleSection
-        title="Recipient Details"
-        sectionId="recipients"
-        expanded={expandedSection === 'recipients'}
-        onToggle={() => toggleSection('recipients')}
-      >
-        {recipientHeaders.map(header => (
-          <HeaderRow
-            key={header.label}
-            label={header.label}
-            value={header.value}
-            copyable={header.copyable}
-            copied={copiedField === header.label}
-            onCopy={() => handleCopy(header.value, header.label)}
-          />
-        ))}
-      </CollapsibleSection>
-
-      {/* Technical Headers - Collapsible */}
-      <CollapsibleSection
-        title="Technical Details"
-        sectionId="technical"
-        expanded={expandedSection === 'technical'}
-        onToggle={() => toggleSection('technical')}
-      >
-        {technicalHeaders.map(header => (
-          <HeaderRow
-            key={header.label}
-            label={header.label}
-            value={header.value}
-            copyable={header.copyable}
-            copied={copiedField === header.label}
-            onCopy={() => handleCopy(header.value, header.label)}
-          />
-        ))}
-      </CollapsibleSection>
-
-      {/* Database Metadata - Collapsible */}
-      <CollapsibleSection
-        title="Database Metadata"
-        sectionId="metadata"
-        expanded={expandedSection === 'metadata'}
-        onToggle={() => toggleSection('metadata')}
-        icon={<Database className="h-4 w-4 text-muted-foreground" />}
-      >
-        {metadataHeaders.map(header => (
-          <HeaderRow
-            key={header.label}
-            label={header.label}
-            value={header.value}
-            copyable={header.copyable}
-            copied={copiedField === header.label}
-            onCopy={() => handleCopy(header.value, header.label)}
-          />
-        ))}
-      </CollapsibleSection>
-
-      {/* Raw Headers - Collapsible */}
-      {email.headers && email.headers.length > 0 && (
+      {/* Advanced Options - Collapsible */}
+      <div className="bg-muted/20 rounded-lg border border-border overflow-hidden">
         <CollapsibleSection
-          title={`Raw SMTP Headers (${email.headers.length})`}
-          sectionId="raw-headers"
-          expanded={expandedSection === 'raw-headers'}
-          onToggle={() => toggleSection('raw-headers')}
+          title="Advanced Information"
+          sectionId="metadata"
+          expanded={expandedSection === 'metadata'}
+          onToggle={() => toggleSection('metadata')}
+          icon={<Database className="h-4 w-4 text-muted-foreground" />}
         >
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {email.headers.map((header, index) => (
-              <div key={index} className="text-xs font-mono">
-                {Object.entries(header).map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-[150px_1fr] gap-2 py-1">
-                    <div className="text-muted-foreground font-semibold truncate">
-                      {key}
-                      :
-                    </div>
-                    <div className="text-foreground break-all">{value}</div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
+          {metadataHeaders.map(header => (
+            <HeaderRow
+              key={header.label}
+              label={header.label}
+              value={header.value}
+              copyable={header.copyable}
+              copied={copiedField === header.label}
+              onCopy={() => handleCopy(header.value, header.label)}
+            />
+          ))}
         </CollapsibleSection>
-      )}
+
+        {/* Raw Headers - Collapsible */}
+        {email.headers && email.headers.length > 0 && (
+          <CollapsibleSection
+            title={`Raw SMTP Headers (${email.headers.length})`}
+            sectionId="raw-headers"
+            expanded={expandedSection === 'raw-headers'}
+            onToggle={() => toggleSection('raw-headers')}
+          >
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {email.headers.map((header, index) => (
+                <div key={index} className="text-xs font-mono">
+                  {Object.entries(header).map(([key, value]) => (
+                    <div key={key} className="grid grid-cols-[150px_1fr] gap-2 py-1">
+                      <div className="text-muted-foreground font-semibold truncate">
+                        {key}
+                        :
+                      </div>
+                      <div className="text-foreground break-all">{value}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
+      </div>
     </div>
   )
 }
