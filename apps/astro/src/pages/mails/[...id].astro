@@ -7,6 +7,8 @@ import { format } from 'date-fns'
 import type { MailboxSession } from '@/actions'
 import { encodeJWTSecret } from '@/lib/utils'
 import * as jose from 'jose'
+import { OTPDisplay } from '@/components/OTPDisplay'
+import { extractOTP, highlightOTP } from '@/lib/otp'
 
 const { id } = Astro.params as { id: string }
 
@@ -15,6 +17,7 @@ const db = getCloudflareD1(Astro.locals.runtime.env.DB as D1Database)
 let data
 let error
 let isAuthorized = false
+let otpCodes: string[] = []
 
 // Get current mailbox session
 const savedMailbox = Astro.cookies.get('mailbox')?.json() as MailboxSession
@@ -30,7 +33,7 @@ try {
         savedMailbox.token,
         encodeJWTSecret(String(Astro.locals.runtime.env.JWT_SECRET))
       )
-      
+
       // Get the email only after JWT verification
       data = await DAO.getEmail(db, id)
       if (!data) {
@@ -39,6 +42,10 @@ try {
         // Check if current mailbox matches email recipient
         if (savedMailbox.mailbox === data.messageTo) {
           isAuthorized = true
+
+          // Extract OTP codes from email content
+          const content = data.html || data.text || ''
+          otpCodes = extractOTP(content)
         } else {
           error = 'Access denied: You can only view emails sent to your mailbox'
           // Clear data to prevent any leakage
@@ -193,6 +200,9 @@ const Env = Astro.locals.runtime.env
                   <span>ID: {data.id}</span>
                 </div>
               </div>
+
+              <!-- OTP Detection -->
+              {otpCodes.length > 0 && <OTPDisplay codes={otpCodes} client:load />}
 
               <!-- Email Content -->
               <div class="email-content">

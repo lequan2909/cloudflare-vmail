@@ -1,54 +1,9 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowJs": true,
-    "checkJs": false,
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./",
-    "composite": true,
-    "incremental": true,
-    "tsBuildInfoFile": "./.tsbuildinfo",
-    "removeComments": false,
-    "importHelpers": true,
-    "isolatedModules": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "@emails/*": ["./apps/astro/src/*"],
-      "@worker/*": ["./apps/emails-worker/src/*"],
-      "database": ["./packages/database"]
-    }
-  },
+  "extends": "./tsconfig.base.json",
+  "files": [],
   "references": [
     { "path": "./packages/database" },
-    { "path": "./apps/astro" },
-    { "path": "./apps/emails-worker" }
-  ],
-  "files": [],
-  "include": [],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".astro",
-    ".wrangler"
+    { "path": "./apps/emails-worker" },
+    { "path": "./apps/astro" }
   ]
 }

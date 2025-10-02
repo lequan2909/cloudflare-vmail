@@ -10,6 +10,7 @@ export type Address = {
 };
 
 export type Email = typeof emails.$inferSelect;
+export type Mailbox = typeof mailboxes.$inferSelect;
 
 export const emails = sqliteTable("emails", {
   id: text("id").primaryKey(),
@@ -33,6 +34,9 @@ export const emails = sqliteTable("emails", {
   text: text("text"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+  readAt: integer("read_at", { mode: "timestamp" }),
+  priority: text("priority", { enum: ["high", "normal", "low"] }).notNull().default("normal"),
 });
 
 const AddressSchema = z.object({
@@ -51,3 +55,17 @@ export const insertEmailSchema = createInsertSchema(emails, {
 });
 
 export type InsertEmail = z.infer<typeof insertEmailSchema>;
+
+// Mailboxes table for claimed mailboxes with password
+export const mailboxes = sqliteTable("mailboxes", {
+  address: text("address").primaryKey(),
+  passwordHash: text("password_hash").notNull(),
+  salt: text("salt").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
+});
+
+export const insertMailboxSchema = createInsertSchema(mailboxes);
+export type InsertMailbox = z.infer<typeof insertMailboxSchema>;
+

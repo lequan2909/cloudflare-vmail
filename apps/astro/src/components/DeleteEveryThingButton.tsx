@@ -25,7 +25,7 @@ export default function DeleteEveryThingButton({ isDisabled }: { isDisabled: boo
               <span className="text-destructive"> to delete all emails?</span>
             </DrawerTitle>
             <DrawerDescription>
-              The datas cannot
+              The data cannot
               <span className="text-destructive"> be recovered</span>
             </DrawerDescription>
           </DrawerHeader>
@@ -43,7 +43,7 @@ export default function DeleteEveryThingButton({ isDisabled }: { isDisabled: boo
 
               return toast({
                 title: 'Deleted',
-                description: `All datas deleted`,
+                description: `All data deleted`,
                 action: (
                   <ToastAction altText="Reload page to update the data" onClick={() => navigate('/')}>Reload Page</ToastAction>
                 ),

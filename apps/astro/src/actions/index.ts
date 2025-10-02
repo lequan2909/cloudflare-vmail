@@ -178,4 +178,155 @@ export const server = {
       )
     },
   }),
+
+  // ============ Mailbox Claim & Auth ============
+
+  isMailboxClaimed: defineAction({
+    input: z.object({
+      address: z.string().email(),
+    }),
+    handler: async (input, ctx) => {
+      const db = getCloudflareD1(ctx.locals.runtime.env.DB)
+      return await DAO.isMailboxClaimed(db, input.address)
+    },
+  }),
+
+  claimMailbox: defineAction({
+    input: z.object({
+      address: z.string().email(),
+      password: z.string().min(6),
+      expiresInDays: z.number().optional().default(30),
+    }),
+    handler: async (input, ctx) => {
+      const db = getCloudflareD1(ctx.locals.runtime.env.DB)
+      const result = await DAO.claimMailbox(
+        db,
+        input.address,
+        input.password,
+        input.expiresInDays
+      )
+
+      if (!result.success) {
+        throw new ActionError({
+          code: 'BAD_REQUEST',
+          message: result.error || 'Failed to claim mailbox',
+        })
+      }
+
+      // Auto login after claim
+      const token = await genToken(input.address, ctx.locals.runtime.env.JWT_SECRET)
+      const session: MailboxSession = {
+        mailbox: input.address,
+        token,
+      }
+
+      ctx.cookies.set('mailbox', session, {
+        httpOnly: true,
+        maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
+        path: '/',
+      })
+
+      return { success: true }
+    },
+  }),
+
+  loginMailbox: defineAction({
+    input: z.object({
+      address: z.string().email(),
+      password: z.string(),
+    }),
+    handler: async (input, ctx) => {
+      const db = getCloudflareD1(ctx.locals.runtime.env.DB)
+      const result = await DAO.loginMailbox(db, input.address, input.password)
+
+      if (!result.success) {
+        throw new ActionError({
+          code: 'UNAUTHORIZED',
+          message: result.error || 'Login failed',
+        })
+      }
+
+      const token = await genToken(input.address, ctx.locals.runtime.env.JWT_SECRET)
+      const session: MailboxSession = {
+        mailbox: input.address,
+        token,
+      }
+
+      ctx.cookies.set('mailbox', session, {
+        httpOnly: true,
+        maxAge: ctx.locals.runtime.env.COOKIE_EXPIRES_IN_SECONDS || 86400,
+        path: '/',
+      })
+
+      return { success: true, mailbox: result.mailbox }
+    },
+  }),
+
+  // ============ Email Read Status ============
+
+  markEmailAsRead: defineAction({
+    input: z.object({
+      id: z.string(),
+    }),
+    handler: async (input, ctx) => {
+      const db = getCloudflareD1(ctx.locals.runtime.env.DB)
+      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
+
+      if (!mailbox) {
+        throw new ActionError({
+          code: 'NOT_FOUND',
+          message: 'mailbox not found',
+        })
+      }
+
+      await jose.jwtVerify(
+        mailbox.token,
+        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
+      )
+
+      return await DAO.markEmailAsRead(db, input.id)
+    },
+  }),
+
+  markAllAsRead: defineAction({
+    handler: async (_, ctx) => {
+      const db = getCloudflareD1(ctx.locals.runtime.env.DB)
+      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
+
+      if (!mailbox) {
+        throw new ActionError({
+          code: 'NOT_FOUND',
+          message: 'mailbox not found',
+        })
+      }
+
+      await jose.jwtVerify(
+        mailbox.token,
+        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
+      )
+
+      return await DAO.markAllAsRead(db, mailbox.mailbox)
+    },
+  }),
+
+  getMailboxStats: defineAction({
+    handler: async (_, ctx) => {
+      const db = getCloudflareD1(ctx.locals.runtime.env.DB)
+      const mailbox = ctx.cookies.get('mailbox')?.json() as MailboxSession
+
+      if (!mailbox) {
+        throw new ActionError({
+          code: 'NOT_FOUND',
+          message: 'mailbox not found',
+        })
+      }
+
+      await jose.jwtVerify(
+        mailbox.token,
+        encodeJWTSecret(ctx.locals.runtime.env.JWT_SECRET),
+      )
+
+      return await DAO.getMailboxStats(db, mailbox.mailbox)
+    },
+  }),
 }

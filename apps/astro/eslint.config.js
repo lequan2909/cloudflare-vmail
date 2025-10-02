@@ -1,5 +1,8 @@
 import antfu from '@antfu/eslint-config'
 
-export default antfu({
+/** @type {import('eslint').Linter.Config[]} */
+const config = antfu({
   astro: true,
 })
+
+export default config
