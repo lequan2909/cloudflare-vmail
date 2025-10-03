@@ -37,6 +37,6 @@ const Env = Astro.locals.runtime.env
   </head>
   <body>
     <slot />
-    <Dock siteName={String(Env.SITE_NAME)} client:only="react" />
+    <Dock client:only="react" />
   </body>
 </html>

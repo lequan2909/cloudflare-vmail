@@ -23,7 +23,7 @@ const tocHeadings = headings.filter(h => h.depth === 2 || h.depth === 3)
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <!-- Table of Contents - Sidebar -->
       {tocHeadings.length > 0 && (
-        <aside class="lg:col-span-3 hidden lg:block animate-in slide-in-from-left duration-500">
+        <aside class="lg:col-span-3 hidden lg:block">
           <div class="sticky top-6">
             <nav class="bg-card border border-border rounded-lg p-6">
               <h3 class="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">
@@ -53,7 +53,6 @@ const tocHeadings = headings.filter(h => h.depth === 2 || h.depth === 3)
       <article
         class:list={[
           tocHeadings.length > 0 ? 'lg:col-span-9' : 'lg:col-span-12',
-          'animate-in slide-in-from-right duration-700'
         ]}
       >
         <div class="bg-card border border-border rounded-lg shadow-sm overflow-hidden">

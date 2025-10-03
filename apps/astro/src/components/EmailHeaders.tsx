@@ -183,7 +183,7 @@ export function EmailHeaders({ email }: EmailHeadersProps) {
                 To
               </div>
               <div className="flex items-center gap-2">
-                <div className="text-base font-semibold text-foreground break-all flex-1 font-mono">
+                <div className="text-base font-semibold text-foreground break-all flex-1">
                   {email.messageTo || 'Unknown'}
                 </div>
                 <Button

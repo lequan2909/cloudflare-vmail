@@ -1,14 +1,10 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Code, FileText, Github, Home, Info, Moon, Shield, Sparkles, Sun } from 'lucide-react'
+import { Code, FileText, Github, Home, Info, Moon, Shield, Sun } from 'lucide-react'
 import React from 'react'
 import { cn } from '@/lib/utils'
 
-interface DockProps {
-  siteName?: string
-}
-
-export function Dock({ siteName = 'VMails' }: DockProps) {
+export function Dock() {
   const [theme, setTheme] = React.useState<'light' | 'dark' | 'system'>('light')
   const [activeHref, setActiveHref] = React.useState<string>('')
 
@@ -55,16 +51,6 @@ export function Dock({ siteName = 'VMails' }: DockProps) {
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className="flex items-center gap-1 bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl px-3 py-3 shadow-lg"
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2 mr-1 pr-3 border-r border-border/50">
-          <div className="h-7 w-7 flex-shrink-0 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-sm font-bold text-primary hidden sm:block">
-            {siteName}
-          </span>
-        </div>
-
         {/* Navigation Items */}
         <div className="flex items-center gap-1">
           {dockItems.map(item => (
