@@ -21,10 +21,11 @@ Dự án này được lấy cảm hứng từ **[oiov/vmail](https://github.com
 
 ### Tính Năng Nâng Cao (V2 & V3)
 - 💾 **Lưu Trữ R2** - Tự động lưu file đính kèm và nội dung email vào Cloudflare R2 để tải nhanh hơn.
-- 🤖 **Telegram Bot** - Nhận thông báo email qua Telegram, xem nội dung, và xóa email ngay trên Telegram.
+- 🤖 **Telegram Bot** - Nhận thông báo email qua Telegram, xem nội dung, xóa, và chặn người gửi ngay lập tức.
 - 🔄 **Webhook Automation** - Tự động đẩy dữ liệu email tới n8n/Zapier để xử lý tự động hóa.
 - 🧹 **Tự Động Dọn Dẹp** - Cron Job chạy hàng giờ để xóa email cũ (Giữ lại 1000 email mới nhất) để tiết kiệm dung lượng.
 - 📤 **Gửi Email** - Hỗ trợ gửi email đi thông qua API (tích hợp Resend/SendGrid).
+- 📊 **Thống Kê & Quản Lý** - Admin Panel cung cấp biểu đồ thống kê, Export dữ liệu, và quản lý danh sách chặn (Blocklist) theo domain.
 
 ## 🏗️ Kiến Trúc
 

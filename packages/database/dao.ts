@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { count, desc, eq, and, sql, like, or, inArray } from "drizzle-orm";
 import { DrizzleD1Database } from 'drizzle-orm/d1'
-import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey, attachments, InsertAttachment } from "./schema"
+import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey, attachments, InsertAttachment, blockedSenders } from "./schema"
 
 // Helper function to handle database operations with consistent error handling
 async function dbOperation<T>(operation: () => Promise<T>, fallback: T): Promise<T> {
@@ -57,6 +57,56 @@ export async function getEmailsByMessageTo(db: DrizzleD1Database, messageTo: str
       .all(),
     []
   );
+}
+
+// Admin: Get Stats Grouped by Sender
+export async function getSenderStats(db: DrizzleD1Database) {
+  return dbOperation(async () => {
+    const result = await db.select({
+      address: emails.messageFrom,
+      count: count()
+    })
+      .from(emails)
+      .groupBy(emails.messageFrom)
+      .orderBy(desc(count()))
+      .limit(20)
+      .all();
+    return result;
+  }, []);
+}
+
+// Admin: Get Stats Grouped by Receiver (Alias)
+export async function getReceiverStats(db: DrizzleD1Database) {
+  return dbOperation(async () => {
+    const result = await db.select({
+      address: emails.messageTo,
+      count: count()
+    })
+      .from(emails)
+      .groupBy(emails.messageTo)
+      .orderBy(desc(count()))
+      .limit(20)
+      .all();
+    return result;
+  }, []);
+}
+
+// Admin: Get All Emails (Stream friendly - but D1 limit is 100MB result, usually ok for JSON export)
+// We fetch ID, From, To, Date, Subject
+export async function getAllEmailsForExport(db: DrizzleD1Database) {
+  return dbOperation(async () => {
+    return await db.select({
+      id: emails.id,
+      from: emails.messageFrom,
+      to: emails.messageTo,
+      subject: emails.subject,
+      created_at: emails.createdAt,
+      is_read: emails.isRead
+    })
+      .from(emails)
+      .orderBy(desc(emails.createdAt))
+      .all();
+  }, []);
 }
 
 export async function getEmailsCount(db: DrizzleD1Database) {
@@ -387,4 +437,44 @@ export async function getAllEmails(db: DrizzleD1Database, limit: number, offset:
 
     return await query.all();
   }, []);
+}
+
+// ============ Blocklist Functions ============
+
+export async function addBlockedSender(db: DrizzleD1Database, emailOrDomain: string, reason?: string) {
+  return dbOperation(() => db.insert(blockedSenders).values({
+    email: emailOrDomain,
+    reason,
+    createdAt: new Date()
+  }).execute(), undefined);
+}
+
+export async function removeBlockedSender(db: DrizzleD1Database, emailOrDomain: string) {
+  return dbOperation(() => db.delete(blockedSenders).where(eq(blockedSenders.email, emailOrDomain)).execute(), undefined);
+}
+
+export async function getBlockedSenders(db: DrizzleD1Database) {
+  return dbOperation(() => db.select().from(blockedSenders).orderBy(desc(blockedSenders.createdAt)).all(), []);
+}
+
+export async function isSenderBlocked(db: DrizzleD1Database, email: string): Promise<boolean> {
+  return dbOperation(async () => {
+    // Check exact match
+    const exactMatch = await db.select().from(blockedSenders).where(eq(blockedSenders.email, email)).limit(1).all();
+    if (exactMatch.length > 0) return true;
+
+    // Check domain match
+    const parts = email.split('@');
+    if (parts.length === 2) {
+      const domain = parts[1];
+      const domainMatch = await db.select().from(blockedSenders).where(eq(blockedSenders.email, `@${domain}`)).limit(1).all();
+      if (domainMatch.length > 0) return true;
+
+      // Also check wildcard like "*@domain.com" if user entered that
+      const wildcardMatch = await db.select().from(blockedSenders).where(eq(blockedSenders.email, `*@${domain}`)).limit(1).all();
+      if (wildcardMatch.length > 0) return true;
+    }
+
+    return false;
+  }, false);
 }

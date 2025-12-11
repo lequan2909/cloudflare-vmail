@@ -17,7 +17,7 @@ import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { InsertEmail, insertEmailSchema, blockedSenders, emails as emailTable, InsertAttachment, attachments } from "database/schema";
 import { getCloudflareD1 } from "database/db";
-import { insertEmail, getEmails, getEmail, getEmailsByMessageTo, insertAttachment, getEmailsToDelete, getAttachmentsByEmailId, deleteEmail, deleteAttachmentsByEmailId, getAllEmails, deleteEmails, getAttachmentsByEmailIds, deleteAttachmentsByEmailIds } from "database/dao";
+import { insertEmail, getEmails, getEmail, getEmailsByMessageTo, insertAttachment, getEmailsToDelete, getAttachmentsByEmailId, deleteEmail, deleteAttachmentsByEmailId, getAllEmails, deleteEmails, getAttachmentsByEmailIds, deleteAttachmentsByEmailIds, getSenderStats, getReceiverStats, getAllEmailsForExport, getBlockedSenders, addBlockedSender, removeBlockedSender, isSenderBlocked } from "database/dao";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
 
@@ -66,33 +66,25 @@ app.use("/api/*", async (c, next) => {
 
 // --- HELPER FUNCTIONS ---
 
-// Database Helper for Blocklist
-async function isSenderBlocked(db: ReturnType<typeof getCloudflareD1>, email: string): Promise<boolean> {
-	try {
-		const result = await db.select().from(blockedSenders).where(eq(blockedSenders.email, email)).get();
-		return !!result;
-	} catch (e) {
-		console.error("Error checking blocklist:", e);
-		return false;
-	}
-}
+// --- HELPER FUNCTIONS ---
 
-async function blockSender(db: ReturnType<typeof getCloudflareD1>, email: string) {
+// Database Helper for Blocklist checks moved to DAO (isSenderBlocked)
+// Local wrapper for logging if needed, or directly use DAO
+// But we keep telegram helper functions using DAO
+
+async function blockSenderCaller(db: ReturnType<typeof getCloudflareD1>, email: string) {
 	try {
-		await db.insert(blockedSenders).values({
-			email,
-			createdAt: new Date(),
-			reason: "User blocked via Telegram"
-		}).onConflictDoNothing().run();
+		// @ts-ignore
+		await addBlockedSender(db, email, "User blocked via Telegram");
 	} catch (e) {
 		console.error("Error blocking sender:", e);
 	}
 }
 
-async function whitelistSender(db: ReturnType<typeof getCloudflareD1>, email: string) {
+async function whitelistSenderCaller(db: ReturnType<typeof getCloudflareD1>, email: string) {
 	try {
 		// @ts-ignore
-		await (db as any).delete(blockedSenders).where(eq(blockedSenders.email, email)).run();
+		await removeBlockedSender(db, email);
 	} catch (e) {
 		console.error("Error whitelisting sender:", e);
 	}
@@ -107,6 +99,22 @@ async function deleteEmail(db: ReturnType<typeof getCloudflareD1>, id: string) {
 	}
 }
 
+// OTP Extraction Helper
+function extractOtp(subject: string, body: string): string | null {
+	try {
+		const combined = `${subject} ${body || ""}`;
+		// Limit length to avoid regex DDOS on massive emails
+		const searchArea = combined.substring(0, 5000);
+		// Regex: Match common keywords followed by 4-8 digits.
+		const otpRegex = /(?:code|otp|verify|verification|pin|secret|mã|xác\s?thực|số|login).*?(\b\d{4,8}\b)/is;
+		const match = searchArea.match(otpRegex);
+		return match ? match[1] : null;
+	} catch (e) {
+		console.error("OTP Extraction Error:", e);
+		return null;
+	}
+}
+
 async function updateEmailSummary(db: ReturnType<typeof getCloudflareD1>, id: string, summary: string) {
 	try {
 		// TODO: Add summary column to emails table first
@@ -118,21 +126,30 @@ async function updateEmailSummary(db: ReturnType<typeof getCloudflareD1>, id: st
 
 
 // Telegram Helpers
+// Telegram Helpers
 async function sendTelegramMessage(token: string, chatId: number, text: string, allowHtml: boolean = false, keyboard?: any) {
 	const body: any = {
 		chat_id: chatId,
-		text,
+		text: text.substring(0, 4000), // Safety clip
 		parse_mode: allowHtml ? "HTML" : undefined,
 	};
 	if (keyboard) {
 		body.reply_markup = keyboard;
 	}
 
-	await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(body),
-	});
+	try {
+		const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+		});
+		if (!res.ok) {
+			const err = await res.text();
+			console.error(`Telegram Send Error: ${res.status} ${err}`, JSON.stringify(body));
+		}
+	} catch (e) {
+		console.error("Telegram Network Error:", e);
+	}
 }
 
 async function editTelegramMessage(token: string, chatId: number, messageId: number, text: string, allowHtml: boolean = false, keyboard?: any) {
@@ -227,7 +244,7 @@ app.get("/api/v1/cleanup", async (c: Context<{ Bindings: Bindings }>) => {
 
 
 
-// Admin: Get All Emails
+// Admin: Get All Emails (paginated)
 app.get("/api/v1/admin/emails", async (c: Context<{ Bindings: Bindings }>) => {
 	const key = c.req.header("X-API-Key");
 	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
@@ -239,6 +256,98 @@ app.get("/api/v1/admin/emails", async (c: Context<{ Bindings: Bindings }>) => {
 	// @ts-ignore
 	const emails = await getAllEmails(db, limit, offset, c.req.query("search"));
 	return c.json(emails);
+});
+
+// Admin: Get Stats
+app.get("/api/v1/admin/stats", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	const db = getCloudflareD1(c.env.DB);
+	// @ts-ignore
+	const [senders, receivers] = await Promise.all([
+		getSenderStats(db),
+		getReceiverStats(db)
+	]);
+
+	return c.json({ senders, receivers });
+});
+
+// Admin: Export All Emails
+app.get("/api/v1/admin/export", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	const db = getCloudflareD1(c.env.DB);
+	// @ts-ignore
+	const data = await getAllEmailsForExport(db);
+
+	// Return as downloadable file
+	return new Response(JSON.stringify(data, null, 2), {
+		headers: {
+			"Content-Type": "application/json",
+			"Content-Disposition": `attachment; filename="vmail-export-${new Date().toISOString().split('T')[0]}.json"`
+		}
+	});
+});
+
+// Admin: Blocklist Endpoints
+app.get("/api/v1/admin/blocklist", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	const db = getCloudflareD1(c.env.DB);
+	// @ts-ignore
+	const list = await getBlockedSenders(db);
+	return c.json(list);
+});
+
+app.post("/api/v1/admin/blocklist", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	try {
+		const { email } = await c.req.json<{ email: string }>();
+		if (!email || !email.includes('@')) return c.json({ error: "Invalid email/domain" }, 400);
+
+		const db = getCloudflareD1(c.env.DB);
+		// @ts-ignore
+		await addBlockedSender(db, email, "Blocked via Admin Panel");
+		return c.json({ success: true });
+	} catch (e: any) {
+		return c.json({ error: e.message, stack: e.stack }, 500);
+	}
+});
+
+// DEBUG ENDPOINT
+app.get("/api/v1/admin/debug/block", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	try {
+		const db = getCloudflareD1(c.env.DB);
+		const testEmail = `debug-${Date.now()}@test.com`;
+		// @ts-ignore
+		const res = await addBlockedSender(db, testEmail, "Debug Insert");
+		// @ts-ignore
+		const list = await getBlockedSenders(db);
+		return c.json({ success: true, inserted: testEmail, list: list, rawRes: res });
+	} catch (e: any) {
+		return c.json({ error: e.message, stack: e.stack, type: "DB_INSERT_FAIL" }, 500);
+	}
+});
+
+app.delete("/api/v1/admin/blocklist", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	const email = c.req.query("email");
+	if (!email) return c.json({ error: "Missing email param" }, 400);
+
+	const db = getCloudflareD1(c.env.DB);
+	// @ts-ignore
+	await removeBlockedSender(db, email);
+	return c.json({ success: true });
 });
 
 // Admin: Bulk Delete Emails
@@ -430,8 +539,8 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 								{ text: "🌐 HTML", callback_data: `html:${email.id}` }
 							],
 							[
-								{ text: "🚫 Block Sender", callback_data: `blk:${from}` },
-								{ text: "✅ Whitelist Sender", callback_data: `wht:${from}` }
+								{ text: "🚫 Block Sender", callback_data: `blk:${email.id}` },
+								{ text: "✅ Whitelist Sender", callback_data: `wht:${email.id}` }
 							]
 						]
 					};
@@ -501,18 +610,41 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 				await editTelegramMessage(token, chatId, messageId, "🗑️ Email deleted.");
 			}
 			else if (action === "blk") {
-				await blockSender(db, target);
-				await answerCallbackQuery(token, query.id, `🚫 Blocked: ${target}`);
+				// Support both ID and Direct Email (Hybrid)
+				let targetEmail = target;
+				if (!target.includes("@")) {
+					const email = await getEmail(db, target);
+					if (email) targetEmail = email.messageFrom;
+					else targetEmail = "";
+				}
+
+				if (targetEmail) {
+					await blockSenderCaller(db, targetEmail);
+					await answerCallbackQuery(token, query.id, `🚫 Blocked: ${targetEmail}`);
+				} else {
+					await answerCallbackQuery(token, query.id, "❌ Email not found");
+				}
 			}
 			else if (action === "wht") {
-				await whitelistSender(db, target);
-				await answerCallbackQuery(token, query.id, `✅ Whitelisted: ${target}`);
+				// Support both ID and Direct Email (Hybrid)
+				let targetEmail = target;
+				if (!target.includes("@")) {
+					const email = await getEmail(db, target);
+					if (email) targetEmail = email.messageFrom;
+					else targetEmail = "";
+				}
+
+				if (targetEmail) {
+					await whitelistSenderCaller(db, targetEmail);
+					await answerCallbackQuery(token, query.id, `✅ Whitelisted: ${targetEmail}`);
+				} else {
+					await answerCallbackQuery(token, query.id, "❌ Email not found");
+				}
 			}
 			else if (action.startsWith("unblock_list")) {
-				// Manage unblocking from list
-				await whitelistSender(db, target);
+				// Manage unblocking from list (Target is email here, as list is local)
+				await whitelistSenderCaller(db, target);
 				await editTelegramMessage(token, chatId, messageId, `✅ Unblocked ${target}. List updated.`);
-				// Ideally refresh list?? Too complex for now.
 			}
 
 			await answerCallbackQuery(token, query.id);
@@ -549,7 +681,10 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 				const keyboardRows = [];
 				for (const item of list) {
 					msg += `- \`${item.email}\`\n`;
-					keyboardRows.push([{ text: `🔓 Unblock ${item.email}`, callback_data: `wht:${item.email}` }]);
+					// Button data limit is 64 bytes. "wht:" is 4 bytes. Email must be < 60 bytes.
+					if (item.email.length < 58) {
+						keyboardRows.push([{ text: `🔓 Unblock ${item.email}`, callback_data: `wht:${item.email}` }]);
+					}
 				}
 				// Split into chunks if too many rows? For now Limit to 10 recent
 				const keyboard = { inline_keyboard: keyboardRows.slice(0, 10) };
@@ -751,21 +886,33 @@ export default {
 	async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
 		const bindings = env as Bindings;
 		try {
-			// 1. Blocklist Check
-			const db = getCloudflareD1(bindings.DB);
-			const messageFrom = message.from;
-			// @ts-ignore - Drizzle version mismatch workaround
-			if (await isSenderBlocked(db as any, messageFrom)) {
-				console.log(`Blocked email from: ${messageFrom}`);
-				message.setReject("Sender is blocked");
-				return;
-			}
-
 			// 2. Parse Email
 			const rawText = await new Response(message.raw).text();
 			const mail = await new PostalMime().parse(rawText);
 			const now = new Date();
 			const emailId = nanoid();
+
+			// Determine Sender for Display & DB (Prefer Header From for clean aggregation)
+			let displaySender = message.from; // Default to Envelope From
+			if (message.headers && message.headers.get("From")) {
+				const headerFrom = message.headers.get("From");
+				// Extract email from "Name <email@domain.com>"
+				const match = headerFrom?.match(/<(.+)>/);
+				if (match && match[1]) {
+					displaySender = match[1].toLowerCase();
+				} else if (headerFrom && headerFrom.includes("@")) {
+					displaySender = headerFrom.toLowerCase();
+				}
+			}
+
+			// 1. Blocklist Check (Check BOTH Envelope and Header From to be safe)
+			const db = getCloudflareD1(bindings.DB);
+			// @ts-ignore
+			if (await isSenderBlocked(db, message.from) || await isSenderBlocked(db, displaySender)) {
+				console.log(`Blocked email from: ${message.from} / ${displaySender}`);
+				message.setReject("Sender is blocked");
+				return;
+			}
 
 			// 3. Process Attachments
 			const workerUrl = bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev";
@@ -824,12 +971,18 @@ export default {
 			}
 
 			// 5. Save to Database
+			const stripHtml = (html: string) => html.replace(/<[^>]*>?/gm, " ").replace(/\s+/g, " ").trim();
+			let cleanText = mail.text;
+			if (!cleanText && mail.html) cleanText = stripHtml(mail.html);
+			else if (cleanText && (cleanText.trim().startsWith("<") || cleanText.includes("</html>"))) cleanText = stripHtml(cleanText);
+
 			const newEmail: InsertEmail = {
 				id: emailId,
 				// ... (Mapping same as before)
-				messageFrom,
+				messageFrom: displaySender,
 				messageTo: message.to,
 				...mail,
+				text: cleanText || null,
 				from: {
 					address: typeof mail.from === 'object' ? (mail.from?.address || "unknown") : "unknown",
 					name: typeof mail.from === 'object' ? (mail.from?.name || "") : ""
@@ -864,15 +1017,7 @@ export default {
 			await sendWebhook(bindings, { ...newEmail, attachments: attachmentMeta });
 
 
-			// OTP Extraction Helper
-			function extractOtp(subject: string, body: string): string | null {
-				const combined = `${subject} ${body || ""}`;
-				// Regex: Match common keywords followed by 4-8 digits.
-				// Matches: "code: 123456", "otp is 123456", "verification code 123456", "mã xác thực: 123456"
-				const otpRegex = /(?:code|otp|verify|verification|pin|secret|mã|xác\s?thực|số|login).*?(\b\d{4,8}\b)/is;
-				const match = combined.match(otpRegex);
-				return match ? match[1] : null;
-			}
+			// function moved out
 
 			// 7. Telegram Notification
 			// ... (Same as before)
@@ -880,20 +1025,22 @@ export default {
 			const tgId = bindings.TELEGRAM_ID;
 
 			if (tgToken && tgId) {
-				const subject = mail.subject || "(No Subject)";
-				const from = typeof mail.from === 'string' ? mail.from : (mail.from?.address || "Unknown");
-				const to = typeof mail.to === 'string' ? mail.to : (mail.to?.[0]?.address || "Unknown");
+				const escapeHtml = (str: string) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+				const subject = escapeHtml(mail.subject || "(No Subject)");
+				const from = escapeHtml(displaySender);
+				const to = escapeHtml(typeof mail.to === 'string' ? mail.to : (mail.to?.[0]?.address || "Unknown"));
 
 				// Check for OTP
-				const otp = extractOtp(subject, mail.text || "");
-				const otpLine = otp ? `\n🔑 **CODE:** \`${otp}\`` : "";
+				const otp = extractOtp(mail.subject || "", mail.text || "");
+				const otpLine = otp ? `\n🔑 OTP: <code>${otp}</code>` : "";
 
-				// Header only message
-				const alertMsg = `📬 *New Email*\n` +
-					`Subject: ${subject}\n` +
-					`From: ${from}\n` +
-					`To: ${to}\n` +
-					`Received: ${now.toLocaleString()}\n` +
+				// HTML Message
+				const alertMsg = `📬 <b>New Email</b>\n` +
+					`<b>Subject:</b> ${subject}\n` +
+					`<b>From:</b> ${from}\n` +
+					`<b>To:</b> ${to}\n` +
+					`<b>Received:</b> ${now.toLocaleString()}\n` +
 					`${otpLine}`;
 
 				const viewUrl = `${bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/view/${newEmail.id}`;
@@ -909,8 +1056,8 @@ export default {
 							{ text: "📄 Text", callback_data: `text:${newEmail.id}` }
 						],
 						[
-							{ text: "🚫 Block Sender", callback_data: `blk:${messageFrom}` },
-							{ text: "✅ Whitelist Sender", callback_data: `wht:${messageFrom}` }
+							{ text: "🚫 Block Sender", callback_data: `blk:${newEmail.id}` },
+							{ text: "✅ Whitelist Sender", callback_data: `wht:${newEmail.id}` }
 						]
 					]
 				};
@@ -918,7 +1065,8 @@ export default {
 				// Broadcast to all master IDs
 				const ids = tgId.split(",");
 				for (const id of ids) {
-					await sendTelegramMessage(tgToken, parseInt(id.trim()), alertMsg, false, keyboard);
+					// Use HTML mode (true)
+					await sendTelegramMessage(tgToken, parseInt(id.trim()), alertMsg, true, keyboard);
 				}
 			}
 

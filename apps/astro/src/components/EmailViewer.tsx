@@ -449,6 +449,9 @@ export function EmailViewer({ email }: EmailViewerProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <code className="bg-muted px-2 py-0.5 rounded text-[10px] select-all cursor-pointer" onClick={() => copyToClipboard(email.id || "")} title="Click to copy ID">
+            ID: {email.id}
+          </code>
           <div className="w-2 h-2 rounded-full bg-green-500" />
           <span>Content loaded</span>
         </div>

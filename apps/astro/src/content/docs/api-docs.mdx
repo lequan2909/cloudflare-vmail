@@ -109,5 +109,19 @@ Set `WEBHOOK_URL` in your `wrangler.toml` file.
 
 *Endpoints currently in development.*
 
-- `GET /api/v1/admin/emails` - List all emails.
+- `GET /api/v1/admin/emails` - List all emails with pagination (`?limit=50&offset=0`).
 - `DELETE /api/v1/admin/email/:id` - Delete a specific email.
+- `POST /api/v1/admin/emails/delete` - Bulk delete emails. Body: `{ids: string[]}`.
+- `GET /api/v1/admin/stats` - Get Admin Stats (Top Senders, Top Receivers).
+- `GET /api/v1/admin/export` - Export ALL email data as JSON. 
+- `GET /api/v1/admin/blocklist` - Get current blocklist.
+- `POST /api/v1/admin/blocklist` - Add to blocklist. Body: `{email: "spammer@bad.com"}` (or `@domain.com`).
+- `DELETE /api/v1/admin/blocklist` - Remove from blocklist. Query: `?email=...`
+
+## 🤖 Smart AI Features
+
+- **Smart Reply**: `POST /api/v1/admin/ai/reply`
+    - Body: `{ emailId: string, instructions?: string }`
+    - Generates a context-aware reply for an email.
+- **AI Summary**: `GET /api/v1/ai/summarize/:id`
+    - Generates a concise summary of the email logic.
