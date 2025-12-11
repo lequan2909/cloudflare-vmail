@@ -1,4 +1,4 @@
-import { Check, Code2, Copy, FileText, Maximize2, Shield } from 'lucide-react'
+import { Check, Code2, Copy, FileText, Maximize2, Shield, Sparkles, Send } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { buildRawMime, copyToClipboard, sanitizeHtml } from '@/lib/email-utils'
@@ -15,18 +15,25 @@ interface EmailViewerProps {
     messageId?: string
     text?: string | null
     html?: string | null
+    sender?: { name?: string, address: string }
   }
 }
 
-type ViewMode = 'html' | 'text' | 'raw'
+type ViewMode = 'html' | 'text' | 'raw' | 'reply'
 
 export function EmailViewer({ email }: EmailViewerProps) {
   const [mode, setMode] = useState<ViewMode>(() => {
-    // Default to text if HTML is not available or prefer text for better reliability
     return email.html ? 'html' : 'text'
   })
   const [copied, setCopied] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Reply State
+  const [replyText, setReplyText] = useState('')
+  const [instructions, setInstructions] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const { toast } = useToast()
 
@@ -132,6 +139,72 @@ export function EmailViewer({ email }: EmailViewerProps) {
     }
   }
 
+  const handleGenerateReply = async () => {
+    setIsGenerating(true)
+    try {
+      const apiKey = localStorage.getItem('vmail_admin_key');
+      if (!apiKey) throw new Error("No API Key");
+
+      const WORKER_URL = import.meta.env.PUBLIC_WORKER_URL || "https://emails-worker.trung27031.workers.dev";
+      const res = await fetch(`${WORKER_URL}/api/v1/admin/ai/reply`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ emailId: email.id, instructions })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (data.reply) setReplyText(data.reply);
+      else throw new Error("No reply generated");
+
+    } catch (e: any) {
+      toast({ title: "Generation Error", description: e.message, variant: "destructive" });
+    } finally {
+      setIsGenerating(false)
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!replyText || !confirm("Send this reply?")) return;
+    setIsSending(true);
+    try {
+      const apiKey = localStorage.getItem('vmail_admin_key');
+      if (!apiKey) throw new Error("No API Key");
+
+      const WORKER_URL = import.meta.env.PUBLIC_WORKER_URL || "https://emails-worker.trung27031.workers.dev";
+
+      const fromAddr = email.messageTo || "noreply@docxs.online";
+      const toAddr = email.from?.address || email.sender?.address;
+
+      if (!toAddr) throw new Error("Could not determine To address");
+
+      const res = await fetch(`${WORKER_URL}/api/v1/send`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: fromAddr,
+          to: toAddr,
+          subject: `Re: ${email.subject}`,
+          content: replyText.replace(/\n/g, '<br/>')
+        })
+      });
+
+      if (res.ok) {
+        toast({ title: "Sent", description: "Reply sent successfully" });
+        setMode('html');
+        setReplyText('');
+        setInstructions('');
+      } else {
+        const err = await res.json() as any;
+        throw new Error(err.error || "Failed to send");
+      }
+    } catch (e: any) {
+      toast({ title: "Sending Error", description: e.message, variant: "destructive" });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className={cn('space-y-4', isFullscreen && 'fixed inset-0 z-50 bg-background p-6 overflow-auto')}>
       {/* Header Bar */}
@@ -167,6 +240,15 @@ export function EmailViewer({ email }: EmailViewerProps) {
             <Code2 className="h-4 w-4 mr-2" />
             Raw MIME
           </Button>
+          <Button
+            variant={mode === 'reply' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setMode('reply')}
+            className="transition-all bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Smart Reply
+          </Button>
         </div>
 
         {/* Action Buttons */}
@@ -179,17 +261,17 @@ export function EmailViewer({ email }: EmailViewerProps) {
           >
             {copied
               ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2 text-green-600" />
-                    Copied
-                  </>
-                )
+                <>
+                  <Check className="h-4 w-4 mr-2 text-green-600" />
+                  Copied
+                </>
+              )
               : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </>
-                )}
+                <>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </>
+              )}
           </Button>
 
           {mode === 'html' && (
@@ -262,51 +344,84 @@ export function EmailViewer({ email }: EmailViewerProps) {
           'bg-card',
         )}
       >
-        {mode === 'html' && email.html
-          ? (
-              <iframe
-                ref={iframeRef}
-                title="Email HTML Content"
-                sandbox="allow-same-origin allow-popups"
-                className="w-full min-h-[500px] bg-white dark:bg-gray-900"
-                style={{ height: isFullscreen ? 'calc(100vh - 300px)' : '600px' }}
-              />
-            )
-          : mode === 'html' && !email.html
-            ? (
-                <div className="p-12 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <Shield className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground font-medium">No HTML content available</p>
-                  <p className="text-sm text-muted-foreground mt-2">Try viewing the plain text version instead</p>
-                </div>
-              )
-            : null}
+        {mode === 'html' && (email.html ? (
+          <iframe
+            ref={iframeRef}
+            title="Email HTML Content"
+            sandbox="allow-same-origin allow-popups"
+            className="w-full min-h-[500px] bg-white dark:bg-gray-900"
+            style={{ height: isFullscreen ? 'calc(100vh - 300px)' : '600px' }}
+          />
+        ) : (
+          <div className="p-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <Shield className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground font-medium">No HTML content available</p>
+            <p className="text-sm text-muted-foreground mt-2">Try viewing the plain text version instead</p>
+          </div>
+        )
+        )}
 
-        {mode === 'text' && email.text
-          ? (
-              <pre className="whitespace-pre-wrap text-sm p-6 font-mono leading-relaxed text-foreground overflow-auto max-h-[600px]">
-                {email.text}
-              </pre>
-            )
-          : mode === 'text' && !email.text
-            ? (
-                <div className="p-12 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <FileText className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground font-medium">No plain text content available</p>
-                  <p className="text-sm text-muted-foreground mt-2">Try viewing the HTML version instead</p>
-                </div>
-              )
-            : null}
+        {mode === 'text' && (email.text ? (
+          <pre className="whitespace-pre-wrap text-sm p-6 font-mono leading-relaxed text-foreground overflow-auto max-h-[600px]">
+            {email.text}
+          </pre>
+        ) : (
+          <div className="p-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <FileText className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground font-medium">No plain text content available</p>
+            <p className="text-sm text-muted-foreground mt-2">Try viewing the HTML version instead</p>
+          </div>
+        )
+        )}
 
         {mode === 'raw' && (
           <div className="relative">
             <pre className="whitespace-pre text-xs p-6 font-mono bg-muted/50 overflow-auto max-h-[600px] text-foreground">
               {rawSource}
             </pre>
+          </div>
+        )}
+
+        {mode === 'reply' && (
+          <div className="p-6 space-y-4 bg-card">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Optional Instructions for AI</label>
+              <input
+                className="w-full p-2 border rounded bg-background"
+                placeholder="e.g. Decline gently, or ask for more details..."
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleGenerateReply} disabled={isGenerating} size="sm">
+                {isGenerating ?
+                  <><Sparkles className="w-4 h-4 mr-2 animate-spin" /> Generating...</> :
+                  <><Sparkles className="w-4 h-4 mr-2" /> Generate Draft</>
+                }
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Reply Content</label>
+              <textarea
+                className="w-full h-64 p-4 border rounded bg-background font-mono text-sm"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                placeholder="Generated reply will appear here..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" onClick={() => setMode('html')}>Cancel</Button>
+              <Button onClick={handleSendReply} disabled={isSending || !replyText}>
+                {isSending ? <><Send className="w-4 h-4 mr-2 animate-pulse" /> Sending...</> : <><Send className="w-4 h-4 mr-2" /> Send Reply</>}
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -322,6 +437,9 @@ export function EmailViewer({ email }: EmailViewerProps) {
           )}
           {mode === 'raw' && (
             <span>Raw: {(rawSource.length / 1024).toFixed(2)} KB</span>
+          )}
+          {mode === 'reply' && (
+            <span>Compose Mode</span>
           )}
         </div>
         <div className="flex items-center gap-2">

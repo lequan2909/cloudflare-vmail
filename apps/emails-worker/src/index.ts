@@ -592,6 +592,44 @@ app.get("/api/v1/ai/summarize/:id", async (c: Context) => {
 	return c.json({ summary: result });
 });
 
+// AI Generate Reply Endpoint
+app.post("/api/v1/admin/ai/reply", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	try {
+		const { emailId, instructions } = await c.req.json<{ emailId: string, instructions?: string }>();
+		if (!emailId) return c.json({ error: "Missing emailId" }, 400);
+
+		const openAIKey = c.env.OPENAI_API_KEY;
+		if (!openAIKey) return c.json({ error: "AI not configured" }, 500);
+
+		const db = getCloudflareD1(c.env.DB);
+		const email = await getEmail(db, emailId);
+		if (!email) return c.json({ error: "Email not found" }, 404);
+
+		const content = email.text || email.html || "No content";
+		const customInstructions = instructions || "Reply professionally and concisely.";
+
+		const prompt = `You are a helpful email assistant. 
+Draft a reply to the following email.
+Instructions: ${customInstructions}
+Original Sender: ${email.messageFrom}`;
+
+		const reply = await callOpenAI(
+			openAIKey,
+			prompt,
+			content,
+			c.env.OPENAI_COMPLETIONS_API,
+			c.env.OPENAI_CHAT_MODEL
+		);
+
+		return c.json({ reply });
+	} catch (e: any) {
+		return c.json({ error: e.message }, 500);
+	}
+});
+
 
 app.get("/api/v1/domains", (c) => {
 	const domains = new Set<string>();
