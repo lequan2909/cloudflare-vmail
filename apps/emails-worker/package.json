@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "database": "workspace:^",
-    "drizzle-orm": "^0.29.3",
+    "drizzle-orm": "0.29.5",
     "hono": "^4.10.8",
     "nanoid": "^5.0.4",
     "postal-mime": "^2.0.2"

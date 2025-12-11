@@ -1,0 +1,62 @@
+{
+    "name": "VMail Incoming Webhook",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "vmail-incoming",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook (Incoming Email)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1,
+            "position": [
+                460,
+                240
+            ],
+            "webhookId": "vmail-incoming-webhook"
+        },
+        {
+            "parameters": {
+                "content": "## Cấu trúc dữ liệu (JSON Payload)\n\nKhi Cloudflare Worker gửi email tới, dữ liệu sẽ có dạng:\n\n```json\n{\n  \"id\": \"...\",\n  \"from\": \"sender@gmail.com\",\n  \"to\": \"me@docxs.online\",\n  \"subject\": \"Hello\",\n  \"text\": \"Email body...\",\n  \"html\": \"HTML body...\",\n  \"attachments\": [\n    {\n      \"filename\": \"file.pdf\",\n      \"url\": \"https://.../api/v1/attachments/...\"\n    }\n  ]\n}\n```",
+                "height": 340,
+                "width": 400
+            },
+            "id": "note-instruction",
+            "name": "Sticky Note",
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                680,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Ví dụ: Log thông tin email ra console n8n\nconst email = $input.all()[0].json.body;\n\nreturn {\n  subject: email.subject,\n  from: email.from,\n  hasAttachments: email.attachments?.length > 0\n};"
+            },
+            "id": "process-data",
+            "name": "Process Data (Example)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                100
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook (Incoming Email)": {
+            "main": [
+                [
+                    {
+                        "node": "Process Data (Example)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
