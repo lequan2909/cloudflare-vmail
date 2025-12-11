@@ -35,12 +35,6 @@ export function Dock() {
     { label: 'About', href: '/docs/about', icon: Info },
     { label: 'Privacy', href: '/docs/privacy', icon: Shield },
     { label: 'Terms', href: '/docs/terms', icon: FileText },
-    {
-      label: 'GitHub',
-      href: 'https://github.com/MiraHikari/cloudflare-vmail',
-      icon: Github,
-      external: true,
-    },
   ]
 
   return (
@@ -76,11 +70,11 @@ export function Dock() {
           >
             {theme === 'dark'
               ? (
-                  <Sun className="h-5 w-5" />
-                )
+                <Sun className="h-5 w-5" />
+              )
               : (
-                  <Moon className="h-5 w-5" />
-                )}
+                <Moon className="h-5 w-5" />
+              )}
           </motion.button>
         </div>
       </motion.div>
