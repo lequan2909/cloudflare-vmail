@@ -163,7 +163,8 @@ async function answerCallbackQuery(token: string, callbackQueryId: string, text?
 
 
 // OpenAI Helper
-async function callOpenAI(apiKey: string, prompt: string, content: string, baseUrl: string = "https://api.openai.com/v1/chat/completions", model: string = "gpt-4o-mini") {
+// OpenAI Helper
+async function callOpenAI(apiKey: string, prompt: string, content: string, baseUrl: string = "https://api.openai.com/v1/chat/completions", model: string = "gpt-4o-mini", systemPrompt: string = "You are a helpful assistant.", maxTokens: number = 1000) {
 	try {
 		const response = await fetch(baseUrl, {
 			method: "POST",
@@ -174,10 +175,10 @@ async function callOpenAI(apiKey: string, prompt: string, content: string, baseU
 			body: JSON.stringify({
 				model: model,
 				messages: [
-					{ role: "system", content: "You are a helpful assistant. Output concise summary." },
-					{ role: "user", content: `${prompt}\n\nContent:\n${content.substring(0, 3000)}` }
+					{ role: "system", content: systemPrompt },
+					{ role: "user", content: `${prompt}\n\nContent:\n${content.substring(0, 15000)}` }
 				],
-				max_tokens: 150
+				max_tokens: maxTokens
 			})
 		});
 		const data: any = await response.json();
@@ -453,10 +454,12 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 						const lang = c.env.SUMMARY_TARGET_LANG || "English";
 						summary = await callOpenAI(
 							c.env.OPENAI_API_KEY,
-							`Summarize this email in 1-2 sentences in ${lang}.`,
+							`Summarize the key points of this email in 1-2 sentences in ${lang}. Be concise but capture the main essence.`,
 							email.text || email.html || "",
 							c.env.OPENAI_COMPLETIONS_API,
-							c.env.OPENAI_CHAT_MODEL
+							c.env.OPENAI_CHAT_MODEL,
+							"You are a helpful assistant. Output concise summary.",
+							2000
 						);
 						await updateEmailSummary(db, target, summary);
 					}
@@ -588,7 +591,7 @@ app.get("/api/v1/ai/summarize/:id", async (c: Context) => {
 	if (!email) return c.json({ error: "Email not found" }, 404);
 
 	const content = email.text || email.html || "No content";
-	const result = await callOpenAI(openAIKey, "Summarize this email.", content, c.env.OPENAI_COMPLETIONS_API, c.env.OPENAI_CHAT_MODEL);
+	const result = await callOpenAI(openAIKey, "Summarize this email in 1-2 sentences.", content, c.env.OPENAI_COMPLETIONS_API, c.env.OPENAI_CHAT_MODEL, "You are a helpful assistant.", 2000);
 	return c.json({ summary: result });
 });
 
@@ -611,17 +614,20 @@ app.post("/api/v1/admin/ai/reply", async (c: Context<{ Bindings: Bindings }>) =>
 		const content = email.text || email.html || "No content";
 		const customInstructions = instructions || "Reply professionally and concisely.";
 
-		const prompt = `You are a helpful email assistant. 
-Draft a reply to the following email.
+
+		const prompt = `Draft a reply to the email below.
 Instructions: ${customInstructions}
-Original Sender: ${email.messageFrom}`;
+Original Sender: ${email.messageFrom}
+Content:`;
 
 		const reply = await callOpenAI(
 			openAIKey,
 			prompt,
 			content,
 			c.env.OPENAI_COMPLETIONS_API,
-			c.env.OPENAI_CHAT_MODEL
+			c.env.OPENAI_CHAT_MODEL,
+			"You are a professional email assistant. Draft a complete, polite, and context-aware reply based on the user's instructions. Do not cut off the response. Provide a full email body.",
+			2500 // Increase max tokens to prevent truncation
 		);
 
 		return c.json({ reply });
@@ -857,6 +863,17 @@ export default {
 			// 6. Trigger Webhook
 			await sendWebhook(bindings, { ...newEmail, attachments: attachmentMeta });
 
+
+			// OTP Extraction Helper
+			function extractOtp(subject: string, body: string): string | null {
+				const combined = `${subject} ${body || ""}`;
+				// Regex: Match common keywords followed by 4-8 digits.
+				// Matches: "code: 123456", "otp is 123456", "verification code 123456", "mã xác thực: 123456"
+				const otpRegex = /(?:code|otp|verify|verification|pin|secret|mã|xác\s?thực|số|login).*?(\b\d{4,8}\b)/is;
+				const match = combined.match(otpRegex);
+				return match ? match[1] : null;
+			}
+
 			// 7. Telegram Notification
 			// ... (Same as before)
 			const tgToken = bindings.TELEGRAM_BOT_TOKEN;
@@ -867,12 +884,17 @@ export default {
 				const from = typeof mail.from === 'string' ? mail.from : (mail.from?.address || "Unknown");
 				const to = typeof mail.to === 'string' ? mail.to : (mail.to?.[0]?.address || "Unknown");
 
+				// Check for OTP
+				const otp = extractOtp(subject, mail.text || "");
+				const otpLine = otp ? `\n🔑 **CODE:** \`${otp}\`` : "";
+
 				// Header only message
 				const alertMsg = `📬 *New Email*\n` +
 					`Subject: ${subject}\n` +
 					`From: ${from}\n` +
 					`To: ${to}\n` +
-					`Received: ${now.toLocaleString()}\n`;
+					`Received: ${now.toLocaleString()}\n` +
+					`${otpLine}`;
 
 				const viewUrl = `${bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/view/${newEmail.id}`;
 

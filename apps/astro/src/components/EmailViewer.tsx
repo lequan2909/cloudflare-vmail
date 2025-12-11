@@ -152,7 +152,7 @@ export function EmailViewer({ email }: EmailViewerProps) {
         body: JSON.stringify({ emailId: email.id, instructions })
       });
 
-      const data = await res.json();
+      const data = await res.json() as any;
       if (data.error) throw new Error(data.error);
       if (data.reply) setReplyText(data.reply);
       else throw new Error("No reply generated");
@@ -243,8 +243,14 @@ export function EmailViewer({ email }: EmailViewerProps) {
           <Button
             variant={mode === 'reply' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setMode('reply')}
-            className="transition-all bg-purple-600 hover:bg-purple-700 text-white"
+            onClick={() => {
+              if (!localStorage.getItem('vmail_admin_key')) {
+                alert("Please login with API Key first!");
+                return;
+              }
+              setMode('reply');
+            }}
+            className={cn("transition-all", mode === 'reply' ? "bg-purple-600 hover:bg-purple-700 text-white" : "")}
           >
             <Sparkles className="h-4 w-4 mr-2" />
             Smart Reply
