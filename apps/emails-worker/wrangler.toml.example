@@ -21,6 +21,7 @@ SEND_PROVIDER_URL = "https://api.resend.com/emails"
 SEND_PROVIDER_KEY = "CHANGE_ME"
 MAIL_SENDER = "noreply@example.com"
 BACKUP_EMAIL = "backup@example.com"
+WEBHOOK_URL = ""
 
 # Provider 1
 # SEND_PROVIDER_URL_1 = ""

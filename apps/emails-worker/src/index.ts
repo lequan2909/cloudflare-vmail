@@ -14,13 +14,15 @@
 import PostalMime from "postal-mime";
 import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
-import { InsertEmail, insertEmailSchema, blockedSenders, emails as emailTable } from "database/schema";
-import { insertEmail, getEmails, getEmail, getEmailsByMessageTo } from "database/dao";
+import { InsertEmail, insertEmailSchema, blockedSenders, emails as emailTable, InsertAttachment, attachments } from "database/schema";
+import { insertEmail, getEmails, getEmail, getEmailsByMessageTo, insertAttachment } from "database/dao";
 import { getCloudflareD1 } from "database/db";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
 
 type Bindings = Env & {
+	R2: R2Bucket;
+	WORKER_URL?: string;
 	DB: D1Database;
 	API_KEY: string;
 	TELEGRAM_BOT_TOKEN?: string;
@@ -34,6 +36,7 @@ type Bindings = Env & {
 	SEND_PROVIDER_KEY?: string;
 	MAIL_SENDER?: string;
 	BACKUP_EMAIL?: string;
+	WEBHOOK_URL?: string;
 	[key: string]: any; // Allow dynamic access for MAIL_SENDER_n
 };
 
@@ -45,7 +48,7 @@ app.use("*", cors());
 app.use("/api/*", async (c, next) => {
 	const path = c.req.path;
 	// Skip for Telegram Webhook and Public Endpoints
-	if (path.includes("/api/telegram") || path.includes("/api/v1/domains")) {
+	if (path.includes("/api/telegram") || path.includes("/api/v1/domains") || path.includes("/api/v1/attachments")) {
 		return await next();
 	}
 
@@ -216,8 +219,6 @@ app.post("/api/v1/send", async (c: Context<{ Bindings: Bindings }>) => {
 		if (!to || !subject || !content) return c.json({ error: "Missing fields" }, 400);
 
 		// Determine Sender
-		// If 'from' is provided (e.g. "Name <user@domain.com>"), extract address. 
-		// Or use default MAIL_SENDER if not provided.
 		let senderAddress = c.env.MAIL_SENDER || "noreply@docxs.online";
 
 		if (from) {
@@ -256,6 +257,34 @@ app.post("/api/v1/send", async (c: Context<{ Bindings: Bindings }>) => {
 
 
 // --- ROUTES ---
+
+// Serve Attachments
+app.get("/api/v1/attachments/:emailId/:filename", async (c) => {
+	const emailId = c.req.param("emailId");
+	const filename = c.req.param("filename");
+	const key = `emails/${emailId}/${filename}`;
+
+	try {
+		// Use R2 binding to get the object
+		const object = await c.env.R2.get(key);
+		if (!object) return c.text("Attachment not found", 404);
+
+		const headers = new Headers();
+		object.writeHttpMetadata(headers);
+		headers.set("etag", object.httpEtag);
+		if (!headers.get("Content-Type")) {
+			headers.set("Content-Type", "application/octet-stream");
+		}
+
+		return new Response(object.body, {
+			headers,
+		});
+	} catch (e) {
+		console.error("R2 Error:", e);
+		return c.text("Internal Error", 500);
+	}
+});
+
 
 // Telegram Webhook Handler
 app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => {
@@ -350,7 +379,12 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 			else if (action === "html") {
 				const email = await getEmail(db, target);
 				if (email) {
-					const content = email.html || "No HTML content";
+					let content = email.html || "No HTML content";
+
+					// Rewrite HTML for Telegram View? 
+					// R2 links should already be in DB if we saved them correctly.
+					// If sending as file, external images should work if accessible.
+
 					const blob = new Blob([content], { type: 'text/html' });
 					const formData = new FormData();
 					formData.append('chat_id', chatId.toString());
@@ -496,12 +530,32 @@ app.get("/api/v1/domains", (c) => {
 	return c.json({ domains: Array.from(domains).sort() });
 });
 
+// Serve Email HTML (View Online)
+app.get("/view/:emailId", async (c) => {
+	const emailId = c.req.param("emailId");
+	const db = getCloudflareD1(c.env.DB);
+	const email = await getEmail(db, emailId);
+
+	if (!email) return c.text("Email not found", 404);
+
+	let html = email.html || `<html><body><pre>${email.text || "No content"}</pre></body></html>`;
+
+	// Inject basic styles for better reading
+	if (!html.includes("<html")) {
+		html = `<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${html}</body></html>`;
+	}
+
+	return c.html(html);
+});
+
 // Automation API Endpoints
 app.get("/api/v1/inbox/:address", async (c) => {
+	// ... existing logic
 	const address = c.req.param("address");
 	const db = getCloudflareD1(c.env.DB);
 	return c.json(await getEmailsByMessageTo(db, address));
 });
+
 
 app.get("/api/v1/message/:id", async (c) => {
 	const id = c.req.param("id");
@@ -520,14 +574,48 @@ app.get("/api/v1/latest/:address", async (c) => {
 });
 
 
+// Webhook Helper
+async function sendWebhook(env: Bindings, email: any) {
+	if (!env.WEBHOOK_URL) return;
+	try {
+		const payload = {
+			id: email.id,
+			from: email.messageFrom,
+			to: email.messageTo,
+			subject: email.subject,
+			text: email.text,
+			html: email.html, // Optional: might be too large
+			summary: email.summary,
+			receivedAt: email.createdAt,
+			attachments: email.attachments?.map((a: any) => ({
+				filename: a.filename,
+				url: `${env.WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/api/v1/attachments/${email.id}/${encodeURIComponent(a.filename)}`
+			}))
+		};
+
+		const res = await fetch(env.WEBHOOK_URL, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload)
+		});
+		if (!res.ok) {
+			console.error(`Webhook failed: ${res.status} ${await res.text()}`);
+		}
+	} catch (e) {
+		console.error("Webhook Error:", e);
+	}
+}
+
+// ...
+
 export default {
 	async email(message: ForwardableEmailMessage, env: Env, ctx: ExecutionContext): Promise<void> {
 		const bindings = env as Bindings;
 		try {
+			// ... (Blocklist check)
 			const db = getCloudflareD1(bindings.DB);
 			const messageFrom = message.from;
 
-			// 1. Blocklist Check
 			if (await isSenderBlocked(db, messageFrom)) {
 				console.log(`Blocked email from: ${messageFrom}`);
 				message.setReject("Sender is blocked");
@@ -538,8 +626,53 @@ export default {
 			const rawText = await new Response(message.raw).text();
 			const mail = await new PostalMime().parse(rawText);
 			const now = new Date();
+			const emailId = nanoid();
 
-			// 3. Catch-all & Forward to Backup
+			// 3. Process Attachments
+			const workerUrl = bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev";
+			const attachmentMeta: any[] = []; // For webhook
+
+			if (mail.attachments && mail.attachments.length > 0) {
+				for (const att of mail.attachments) {
+					const filename = att.filename || `file-${nanoid(4)}`;
+					const key = `emails/${emailId}/${filename}`;
+					const cid = att.contentId ? att.contentId.replace(/[<>]/g, "") : null;
+
+					// Fix: content might be string or ArrayBuffer
+					const contentValues = att.content;
+					const size = (typeof contentValues === 'string')
+						? contentValues.length
+						: (contentValues as ArrayBuffer).byteLength;
+
+					// Upload to R2
+					await bindings.R2.put(key, contentValues, {
+						httpMetadata: { contentType: att.mimeType }
+					});
+
+					// Save Metadata
+					const attData: InsertAttachment = {
+						id: nanoid(),
+						emailId: emailId,
+						filename: filename,
+						contentType: att.mimeType,
+						size: size,
+						r2Key: key,
+						cid: cid,
+						createdAt: now
+					};
+					await insertAttachment(db, attData);
+					attachmentMeta.push(attData);
+
+					// Rewrite HTML
+					if (cid && mail.html) {
+						const publicUrl = `${workerUrl}/api/v1/attachments/${emailId}/${encodeURIComponent(filename)}`;
+						const regex = new RegExp(`cid:${cid}`, "g");
+						mail.html = mail.html.replace(regex, publicUrl);
+					}
+				}
+			}
+
+			// 4. Backup Forwarding
 			if (bindings.BACKUP_EMAIL) {
 				try {
 					await message.forward(bindings.BACKUP_EMAIL);
@@ -548,9 +681,10 @@ export default {
 				}
 			}
 
-			// 4. Save to Database
+			// 5. Save to Database
 			const newEmail: InsertEmail = {
-				id: nanoid(),
+				id: emailId,
+				// ... (Mapping same as before)
 				messageFrom,
 				messageTo: message.to,
 				...mail,
@@ -584,7 +718,11 @@ export default {
 			const email = insertEmailSchema.parse(newEmail);
 			await insertEmail(db, email);
 
-			// 5. Telegram Notification (Rich Buttons)
+			// 6. Trigger Webhook
+			await sendWebhook(bindings, { ...newEmail, attachments: attachmentMeta });
+
+			// 7. Telegram Notification
+			// ... (Same as before)
 			const tgToken = bindings.TELEGRAM_BOT_TOKEN;
 			const tgId = bindings.TELEGRAM_ID;
 
@@ -600,15 +738,17 @@ export default {
 					`To: ${to}\n` +
 					`Received: ${now.toLocaleString()}\n`;
 
+				const viewUrl = `${bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/view/${newEmail.id}`;
+
 				const keyboard = {
 					inline_keyboard: [
 						[
 							{ text: "👁️ Preview", callback_data: `preview:${newEmail.id}` },
-							{ text: "📝 Summary", callback_data: `summary:${newEmail.id}` }
+							{ text: "🌍 Read Online", url: viewUrl }
 						],
 						[
-							{ text: "📄 Text", callback_data: `text:${newEmail.id}` },
-							{ text: "🌐 HTML", callback_data: `html:${newEmail.id}` }
+							{ text: "📝 Summary", callback_data: `summary:${newEmail.id}` },
+							{ text: "📄 Text", callback_data: `text:${newEmail.id}` }
 						],
 						[
 							{ text: "🚫 Block Sender", callback_data: `blk:${messageFrom}` },

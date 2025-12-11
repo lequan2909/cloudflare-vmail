@@ -96,4 +96,18 @@ export const blockedSenders = sqliteTable("blocked_senders", {
 export const insertBlockedSenderSchema = createInsertSchema(blockedSenders);
 export type InsertBlockedSender = z.infer<typeof insertBlockedSenderSchema>;
 
+export const attachments = sqliteTable("attachments", {
+  id: text("id").primaryKey(),
+  emailId: text("email_id").notNull(),
+  filename: text("filename").notNull(),
+  contentType: text("content_type").notNull(),
+  size: integer("size").notNull(),
+  r2Key: text("r2_key").notNull(),
+  cid: text("cid"), // Content-ID for inline images
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const insertAttachmentSchema = createInsertSchema(attachments);
+export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
+
 

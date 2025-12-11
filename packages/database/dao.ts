@@ -1,6 +1,6 @@
 import { count, desc, eq, and } from "drizzle-orm";
 import { DrizzleD1Database } from 'drizzle-orm/d1'
-import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey } from "./schema"
+import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey, attachments, InsertAttachment } from "./schema"
 
 // Helper function to handle database operations with consistent error handling
 async function dbOperation<T>(operation: () => Promise<T>, fallback: T): Promise<T> {
@@ -324,5 +324,15 @@ export async function getApiKeysByMailbox(db: DrizzleD1Database, mailboxAddress:
       .all(),
     []
   );
+}
+
+// ============ Attachment Functions ============
+
+export async function insertAttachment(db: DrizzleD1Database, attachment: InsertAttachment) {
+  return dbOperation(() => db.insert(attachments).values(attachment).execute(), undefined);
+}
+
+export async function getAttachmentsByEmailId(db: DrizzleD1Database, emailId: string) {
+  return dbOperation(() => db.select().from(attachments).where(eq(attachments.emailId, emailId)).all(), []);
 }
 
