@@ -209,61 +209,61 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
       {/* Email List */}
       {!isFetching && data.length === 0
         ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="relative inline-block mb-6">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-                  <MailIcon className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <div className="absolute -top-1 -right-1">
-                  <Sparkles className="h-6 w-6 text-primary animate-pulse" />
-                </div>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="relative inline-block mb-6">
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+                <MailIcon className="h-10 w-10 text-muted-foreground" />
               </div>
-
-              <h3 className="text-lg font-semibold mb-2">
-                Waiting for emails...
-              </h3>
-              <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
-                Your temporary mailbox is ready! Use this email address to sign up for services,
-                and new emails will appear here automatically within 30 seconds.
-              </p>
-
-              {/* Usage Guide */}
-              <details className="w-full max-w-md text-left bg-muted/30 rounded-lg p-4 cursor-pointer group">
-                <summary className="text-sm font-medium list-none flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    💡 How to use your temporary mailbox?
-                  </span>
-                  <span className="text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <ol className="mt-4 space-y-2 text-sm text-muted-foreground leading-relaxed">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-semibold">1.</span>
-                    <span>Copy your email address from the left panel</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-semibold">2.</span>
-                    <span>Paste it on any website that requires email</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-semibold">3.</span>
-                    <span>Return here to check for verification emails</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-semibold">4.</span>
-                    <span>Complete verification and delete the mailbox</span>
-                  </li>
-                </ol>
-              </details>
+              <div className="absolute -top-1 -right-1">
+                <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+              </div>
             </div>
-          )
+
+            <h3 className="text-lg font-semibold mb-2">
+              Waiting for emails...
+            </h3>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6 text-sm leading-relaxed">
+              Your temporary mailbox is ready! Use this email address to sign up for services,
+              and new emails will appear here automatically within 30 seconds.
+            </p>
+
+            {/* Usage Guide */}
+            <details className="w-full max-w-md text-left bg-muted/30 rounded-lg p-4 cursor-pointer group">
+              <summary className="text-sm font-medium list-none flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  💡 How to use your temporary mailbox?
+                </span>
+                <span className="text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <ol className="mt-4 space-y-2 text-sm text-muted-foreground leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">1.</span>
+                  <span>Copy your email address from the left panel</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">2.</span>
+                  <span>Paste it on any website that requires email</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">3.</span>
+                  <span>Return here to check for verification emails</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-semibold">4.</span>
+                  <span>Complete verification and delete the mailbox</span>
+                </li>
+              </ol>
+            </details>
+          </div>
+        )
         : filteredEmails.length > 0
           ? (
-              <div className="space-y-2">
-                {filteredEmails.map((mail: Email) => (
-                  <MailItem key={mail.id} mail={mail} />
-                ))}
-              </div>
-            )
+            <div className="space-y-2">
+              {filteredEmails.map((mail: Email) => (
+                <MailItem key={mail.id} mail={mail} />
+              ))}
+            </div>
+          )
           : searchTerm
             ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -277,7 +277,7 @@ export function Inbox({ mails, mailboxAddress, isClaimed }: InboxProps) {
                 </Button>
               </div>
             )
-          : null}
+            : null}
     </div>
   )
 }

@@ -45,3 +45,5 @@ lerna-debug.log*
 # Testing
 coverage/
 .nyc_output/
+apps/emails-worker/wrangler.toml
+apps/astro/wrangler.toml

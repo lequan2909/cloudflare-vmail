@@ -15,6 +15,13 @@
       "when": 1759430627842,
       "tag": "0001_many_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1765353970866,
+      "tag": "0002_messy_devos",
+      "breakpoints": true
     }
   ]
 }

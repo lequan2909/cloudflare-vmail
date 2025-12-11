@@ -23,29 +23,17 @@ enabled = true
 # Note: Use secrets to store sensitive data.
 # - https://developers.cloudflare.com/workers/configuration/secrets/
 [vars]
-API_KEY = "Trung6689@"
-MAIL_DOMAIN = "docxs.online,atmvn.shop"
-TELEGRAM_BOT_TOKEN = "7595618103:AAH3-6_hDKwK9av_robsoN8DpjZCQwBSPUA"
-TELEGRAM_ID = "1700317484"
-OPENAI_API_KEY = "Trung6689@"
-OPENAI_CHAT_MODEL = "gemini-2.5-flash"
-OPENAI_COMPLETIONS_API = "https://gemini1.docxs.online/v1/chat/completions"
-SUMMARY_TARGET_LANG = "Vietnamese"
+API_KEY = "changeme"
+MAIL_DOMAIN = "vmail.dev"
+TELEGRAM_BOT_TOKEN = "123:abc"
+TELEGRAM_ID = "123456"
+OPENAI_API_KEY = "sk-..."
+OPENAI_CHAT_MODEL = "gpt-4o-mini"
+OPENAI_COMPLETIONS_API = "https://api.openai.com/v1/chat/completions"
 # Sending Config
 SEND_PROVIDER_URL = "https://api.resend.com/emails"
-SEND_PROVIDER_KEY = "re_eY3hzKRc_DxqPDYeWfZCc6BXPRWVZDx4s"
-MAIL_SENDER = "noreply@docxs.online"
-BACKUP_EMAIL = "trung27031@gmail.com"
-
-# Provider 1
-SEND_PROVIDER_URL_1 = "https://api.resend.com/emails"
-SEND_PROVIDER_KEY_1 = "re_eY3hzKRc_DxqPDYeWfZCc6BXPRWVZDx4s"
-MAIL_SENDER_1 = "docxs.online,atmvn.shop"
-
-# Provider 2
-#SEND_PROVIDER_URL_2 = "https://api.resend.com/emails"
-#SEND_PROVIDER_KEY_2 = "djhaskjdhaksjdhaksdhkajdhkass"
-#MAIL_SENDER_2 = "docxs213.online, abc213.321xyz"
+SEND_PROVIDER_KEY = "re_123"
+MAIL_SENDER = "noreply@vmail.dev"
 
 # Bind the Workers AI model catalog. Run machine learning models, powered by serverless GPUs, on Cloudflare’s global network
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#workers-ai
@@ -64,8 +52,8 @@ MAIL_SENDER_1 = "docxs.online,atmvn.shop"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "vmail-db"
-database_id = "a8152d1b-ecd4-4d1d-a607-f855c3e55059"
+database_name = "bitte"
+database_id = "1927140f-0270-471a-82bf-c553ab14ee1b"
 
 # Bind a dispatch namespace. Use Workers for Platforms to deploy serverless functions programmatically on behalf of your customers.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#dispatch-namespace-bindings-workers-for-platforms

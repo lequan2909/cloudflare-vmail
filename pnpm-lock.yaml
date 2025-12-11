@@ -201,6 +201,12 @@ importers:
       database:
         specifier: workspace:^
         version: link:../../packages/database
+      drizzle-orm:
+        specifier: ^0.29.3
+        version: 0.29.3(@cloudflare/workers-types@4.20250129.0)(@types/react@19.2.0)(react@19.2.0)
+      hono:
+        specifier: ^4.10.8
+        version: 4.10.8
       nanoid:
         specifier: ^5.0.4
         version: 5.0.9
@@ -3093,6 +3099,77 @@ packages:
     resolution: {integrity: sha512-fLTwcnLqtBxGd+51H/dEm9TC0FW6+cIX/RVPyNcitBO77X9+nkogEfMAJebpd/8Yl4KucmePHRYRWWvUlW0rqg==}
     hasBin: true
 
+  drizzle-orm@0.29.3:
+    resolution: {integrity: sha512-uSE027csliGSGYD0pqtM+SAQATMREb3eSM/U8s6r+Y0RFwTKwftnwwSkqx3oS65UBgqDOM0gMTl5UGNpt6lW0A==}
+    peerDependencies:
+      '@aws-sdk/client-rds-data': '>=3'
+      '@cloudflare/workers-types': '>=3'
+      '@libsql/client': '*'
+      '@neondatabase/serverless': '>=0.1'
+      '@opentelemetry/api': ^1.4.1
+      '@planetscale/database': '>=1'
+      '@types/better-sqlite3': '*'
+      '@types/pg': '*'
+      '@types/react': '>=18'
+      '@types/sql.js': '*'
+      '@vercel/postgres': '*'
+      better-sqlite3: '>=7'
+      bun-types: '*'
+      expo-sqlite: '>=13.2.0'
+      knex: '*'
+      kysely: '*'
+      mysql2: '>=2'
+      pg: '>=8'
+      postgres: '>=3'
+      react: '>=18'
+      sql.js: '>=1'
+      sqlite3: '>=5'
+    peerDependenciesMeta:
+      '@aws-sdk/client-rds-data':
+        optional: true
+      '@cloudflare/workers-types':
+        optional: true
+      '@libsql/client':
+        optional: true
+      '@neondatabase/serverless':
+        optional: true
+      '@opentelemetry/api':
+        optional: true
+      '@planetscale/database':
+        optional: true
+      '@types/better-sqlite3':
+        optional: true
+      '@types/pg':
+        optional: true
+      '@types/react':
+        optional: true
+      '@types/sql.js':
+        optional: true
+      '@vercel/postgres':
+        optional: true
+      better-sqlite3:
+        optional: true
+      bun-types:
+        optional: true
+      expo-sqlite:
+        optional: true
+      knex:
+        optional: true
+      kysely:
+        optional: true
+      mysql2:
+        optional: true
+      pg:
+        optional: true
+      postgres:
+        optional: true
+      react:
+        optional: true
+      sql.js:
+        optional: true
+      sqlite3:
+        optional: true
+
   drizzle-orm@0.29.5:
     resolution: {integrity: sha512-jS3+uyzTz4P0Y2CICx8FmRQ1eplURPaIMWDn/yq6k4ShRFj9V7vlJk67lSf2kyYPzQ60GkkNGXcJcwrxZ6QCRw==}
     peerDependencies:
@@ -3863,8 +3940,8 @@ packages:
   heap@0.2.7:
     resolution: {integrity: sha512-2bsegYkkHO+h/9MGbn6KWcE45cHZgPANo5LXF7EvWdT0yT2EguSVO1nDgU5c8+ZOPwp2vMNa7YFsJhVcDR9Sdg==}
 
-  hono@4.6.20:
-    resolution: {integrity: sha512-5qfNQeaIptMaJKyoJ6N/q4gIq0DBp2FCRaLNuUI3LlJKL4S37DY/rLL1uAxA4wrPB39tJ3s+f7kgI79O4ScSug==}
+  hono@4.10.8:
+    resolution: {integrity: sha512-DDT0A0r6wzhe8zCGoYOmMeuGu3dyTAE40HHjwUsWFTEy5WxK1x2WDSsBPlEXgPbRIFY6miDualuUDbasPogIww==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@3.0.3:
@@ -6701,13 +6778,13 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
-  '@hono/node-server@1.13.8(hono@4.6.20)':
+  '@hono/node-server@1.13.8(hono@4.10.8)':
     dependencies:
-      hono: 4.6.20
+      hono: 4.10.8
 
-  '@hono/zod-validator@0.2.2(hono@4.6.20)(zod@3.22.4)':
+  '@hono/zod-validator@0.2.2(hono@4.10.8)(zod@3.22.4)':
     dependencies:
-      hono: 4.6.20
+      hono: 4.10.8
       zod: 3.22.4
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.63.0(react@19.2.0))':
@@ -8685,8 +8762,8 @@ snapshots:
   drizzle-kit@0.20.18:
     dependencies:
       '@esbuild-kit/esm-loader': 2.6.5
-      '@hono/node-server': 1.13.8(hono@4.6.20)
-      '@hono/zod-validator': 0.2.2(hono@4.6.20)(zod@3.22.4)
+      '@hono/node-server': 1.13.8(hono@4.10.8)
+      '@hono/zod-validator': 0.2.2(hono@4.10.8)(zod@3.22.4)
       camelcase: 7.0.1
       chalk: 5.3.0
       commander: 9.5.0
@@ -8695,7 +8772,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.19.12)
       glob: 8.1.0
       hanji: 0.0.5
-      hono: 4.6.20
+      hono: 4.10.8
       json-diff: 0.9.0
       minimatch: 7.4.6
       semver: 7.7.0
@@ -8703,6 +8780,12 @@ snapshots:
       zod: 3.22.4
     transitivePeerDependencies:
       - supports-color
+
+  drizzle-orm@0.29.3(@cloudflare/workers-types@4.20250129.0)(@types/react@19.2.0)(react@19.2.0):
+    optionalDependencies:
+      '@cloudflare/workers-types': 4.20250129.0
+      '@types/react': 19.2.0
+      react: 19.2.0
 
   drizzle-orm@0.29.5(@cloudflare/workers-types@4.20251001.0)(@types/react@19.2.0)(react@19.2.0):
     optionalDependencies:
@@ -9905,7 +9988,7 @@ snapshots:
 
   heap@0.2.7: {}
 
-  hono@4.6.20: {}
+  hono@4.10.8: {}
 
   html-escaper@3.0.3: {}
 

@@ -1,0 +1,33 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "emails-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-25"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[vars]
+API_KEY = "CHANGE_ME"
+MAIL_DOMAIN = "example.com"
+TELEGRAM_BOT_TOKEN = "CHANGE_ME"
+TELEGRAM_ID = "CHANGE_ME"
+OPENAI_API_KEY = "CHANGE_ME"
+OPENAI_CHAT_MODEL = "gemini-2.5-flash"
+OPENAI_COMPLETIONS_API = "https://gemini.example.com/v1/chat/completions"
+SUMMARY_TARGET_LANG = "Vietnamese"
+# Sending Config
+SEND_PROVIDER_URL = "https://api.resend.com/emails"
+SEND_PROVIDER_KEY = "CHANGE_ME"
+MAIL_SENDER = "noreply@example.com"
+BACKUP_EMAIL = "backup@example.com"
+
+# Provider 1
+# SEND_PROVIDER_URL_1 = ""
+# SEND_PROVIDER_KEY_1 = ""
+# MAIL_SENDER_1 = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vmail-db"
+database_id = "CHANGE_ME"

@@ -86,3 +86,14 @@ export const insertApiKeySchema = createInsertSchema(apiKeys);
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 export type ApiKey = typeof apiKeys.$inferSelect;
 
+// Blocked Senders table
+export const blockedSenders = sqliteTable("blocked_senders", {
+  email: text("email").primaryKey(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  reason: text("reason"),
+});
+
+export const insertBlockedSenderSchema = createInsertSchema(blockedSenders);
+export type InsertBlockedSender = z.infer<typeof insertBlockedSenderSchema>;
+
+
