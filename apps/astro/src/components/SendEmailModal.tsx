@@ -23,10 +23,10 @@ export default function SendEmailModal() {
             const url = formData.workerUrl || 'https://emails-worker.trung27031.workers.dev/api/v1/domains';
             try {
                 const res = await fetch(url);
-                const data = await res.json();
+                const data = await res.json() as { domains: string[] };
                 if (data.domains && data.domains.length > 0) {
                     setDomains(data.domains);
-                    setSelectedDomain(data.domains[0]);
+                    setSelectedDomain(data.domains[0]!);
                 }
             } catch (e) {
                 console.error("Failed to load domains", e);

@@ -10,7 +10,7 @@ export function SelectDomain({
     const fetchDomains = async () => {
       try {
         const res = await fetch('https://emails-worker.trung27031.workers.dev/api/v1/domains')
-        const data = await res.json()
+        const data = await res.json() as { domains: string[] }
         if (data.domains && Array.isArray(data.domains)) {
           // Remove duplicates and combine if needed, or just prefer API
           setDomains(data.domains)

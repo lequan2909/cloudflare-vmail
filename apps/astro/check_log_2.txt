@@ -1,0 +1,221 @@
+15:56:50 [@astrojs/cloudflare] Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
+15:56:50 [@astrojs/cloudflare] If you see the error "Invalid binding `SESSION`" in your build output, you need to add the binding to your wrangler config file.
+15:56:51 [content] Syncing content
+15:56:51 [content] Synced content
+15:56:51 [types] Generated 1.15s
+15:56:51 [check] Getting diagnostics for Astro files in C:\Users\trung\cloudflare-vmail\apps\astro...
+[96msrc/components/AdminPanel.tsx[0m:[93m3[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'API_BASE' is declared but its value is never read.
+
+[7m3[0m const API_BASE = "/api/v1/admin";
+[7m [0m [93m      ~~~~~~~~[0m
+
+[96msrc/components/CopyButton.tsx[0m:[93m53[0m:[93m37[0m - [93mwarning[0m[90m ts(6387): [0mThe signature '(commandId: string, showUI?: boolean | undefined, value?: string | undefined): boolean' of 'document.execCommand' is deprecated.
+
+[7m53[0m         const successful = document.execCommand('copy')
+[7m  [0m [93m                                    ~~~~~~~~~~~[0m
+
+[96msrc/components/Dock.tsx[0m:[93m41[0m:[93m13[0m - [93mwarning[0m[90m ts(6385): [0m'Github' is deprecated.
+
+[7m41[0m       icon: Github,
+[7m  [0m [93m            ~~~~~~[0m
+[96msrc/components/Dock.tsx[0m:[93m3[0m:[93m26[0m - [93mwarning[0m[90m ts(6385): [0m'Github' is deprecated.
+
+[7m3[0m import { Code, FileText, Github, Home, Info, Moon, Shield, Sun } from 'lucide-react'
+[7m [0m [93m                         ~~~~~~[0m
+
+[96msrc/components/EmailHeaders.tsx[0m:[93m55[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'formatAddresses' is declared but its value is never read.
+
+[7m55[0m function formatAddresses(addrs: Address[] | undefined | null): string {
+[7m  [0m [93m         ~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/EmailViewer.tsx[0m:[93m50[0m:[93m19[0m - [93mwarning[0m[90m ts(6387): [0mThe signature '(...text: string[]): void' of 'iframeDoc.write' is deprecated.
+
+[7m50[0m         iframeDoc.write(`
+[7m  [0m [93m                  ~~~~~[0m
+
+[96msrc/components/SendEmailModal.tsx[0m:[93m29[0m:[93m39[0m - [91merror[0m[90m ts(2345): [0mArgument of type 'string | undefined' is not assignable to parameter of type 'SetStateAction<string>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<string>'.
+
+[7m29[0m                     setSelectedDomain(data.domains[0]);
+[7m  [0m [91m                                      ~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/ui/checkbox.tsx[0m:[93m9[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m9[0m   React.ElementRef<typeof CheckboxPrimitive.Root>,
+[7m [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/dialog.tsx[0m:[93m104[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m104[0m   React.ElementRef<typeof DialogPrimitive.Description>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dialog.tsx[0m:[93m89[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m89[0m   React.ElementRef<typeof DialogPrimitive.Title>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dialog.tsx[0m:[93m33[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m33[0m   React.ElementRef<typeof DialogPrimitive.Content>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dialog.tsx[0m:[93m18[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m18[0m   React.ElementRef<typeof DialogPrimitive.Overlay>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/drawer.tsx[0m:[93m100[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m100[0m   React.ElementRef<typeof DrawerPrimitive.Description>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/drawer.tsx[0m:[93m85[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m85[0m   React.ElementRef<typeof DrawerPrimitive.Title>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/drawer.tsx[0m:[93m38[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m38[0m   React.ElementRef<typeof DrawerPrimitive.Content>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/drawer.tsx[0m:[93m26[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m26[0m   React.ElementRef<typeof DrawerPrimitive.Overlay>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m163[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m163[0m   React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m145[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m145[0m   React.ElementRef<typeof DropdownMenuPrimitive.Label>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m123[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m123[0m   React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m99[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m99[0m   React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m81[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m81[0m   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m62[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m62[0m   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m46[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m46[0m   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/dropdown-menu.tsx[0m:[93m24[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m24[0m   React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/form.tsx[0m:[93m107[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m107[0m   React.ElementRef<typeof Slot>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/form.tsx[0m:[93m90[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m90[0m   React.ElementRef<typeof LabelPrimitive.Root>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/label.tsx[0m:[93m13[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m13[0m   React.ElementRef<typeof LabelPrimitive.Root>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/select.tsx[0m:[93m140[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m140[0m   React.ElementRef<typeof SelectPrimitive.Separator>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/select.tsx[0m:[93m118[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m118[0m   React.ElementRef<typeof SelectPrimitive.Item>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/select.tsx[0m:[93m106[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m106[0m   React.ElementRef<typeof SelectPrimitive.Label>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/select.tsx[0m:[93m74[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m74[0m   React.ElementRef<typeof SelectPrimitive.Content>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/select.tsx[0m:[93m56[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m56[0m   React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/select.tsx[0m:[93m39[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m39[0m   React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/select.tsx[0m:[93m19[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m19[0m   React.ElementRef<typeof SelectPrimitive.Trigger>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/separator.tsx[0m:[93m7[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m7[0m   React.ElementRef<typeof SeparatorPrimitive.Root>,
+[7m [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/toast.tsx[0m:[93m103[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m103[0m   React.ElementRef<typeof ToastPrimitives.Description>,
+[7m   [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/toast.tsx[0m:[93m91[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m91[0m   React.ElementRef<typeof ToastPrimitives.Title>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/toast.tsx[0m:[93m73[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m73[0m   React.ElementRef<typeof ToastPrimitives.Close>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/toast.tsx[0m:[93m58[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m58[0m   React.ElementRef<typeof ToastPrimitives.Action>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/toast.tsx[0m:[93m43[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m43[0m   React.ElementRef<typeof ToastPrimitives.Root>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+[96msrc/components/ui/toast.tsx[0m:[93m12[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m12[0m   React.ElementRef<typeof ToastPrimitives.Viewport>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/components/ui/tooltip.tsx[0m:[93m13[0m:[93m9[0m - [93mwarning[0m[90m ts(6385): [0m'ElementRef' is deprecated.
+
+[7m13[0m   React.ElementRef<typeof TooltipPrimitive.Content>,
+[7m  [0m [93m        ~~~~~~~~~~[0m
+
+[96msrc/layouts/BaseLayout.astro[0m:[93m11[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'Env' is declared but its value is never read.
+
+[7m11[0m const Env = Astro.locals.runtime.env
+[7m  [0m [93m      ~~~[0m
+
+[96msrc/layouts/DocsLayout.astro[0m:[93m105[0m:[93m9[0m - [93mwarning[0m[90m ts(6133): [0m'activeHeading' is declared but its value is never read.
+
+[7m105[0m     let activeHeading: string | null = null
+[7m   [0m [93m        ~~~~~~~~~~~~~[0m
+
+[96msrc/lib/email-utils.ts[0m:[93m157[0m:[93m30[0m - [93mwarning[0m[90m ts(6387): [0mThe signature '(commandId: string, showUI?: boolean | undefined, value?: string | undefined): boolean' of 'document.execCommand' is deprecated.
+
+[7m157[0m     const success = document.execCommand('copy')
+[7m   [0m [93m                             ~~~~~~~~~~~[0m
+
+[96msrc/pages/index.astro[0m:[93m31[0m:[93m7[0m - [93mwarning[0m[90m ts(6133): [0m'featuredFeatures' is declared but its value is never read.
+
+[7m31[0m const featuredFeatures = allFeatures
+[7m  [0m [93m      ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/pages/docs/[slug].astro[0m:[93m2[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'getCollection' is declared but its value is never read.
+
+[7m2[0m import { getCollection, getEntry, render } from 'astro:content'
+[7m [0m [93m         ~~~~~~~~~~~~~[0m
+
+Result (71 files): 
+- 1 error
+- 0 warnings
+- 46 hints
+

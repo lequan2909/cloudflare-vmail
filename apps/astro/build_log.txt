@@ -1,0 +1,18 @@
+16:03:21 [@astrojs/cloudflare] Enabling sessions with Cloudflare KV with the "SESSION" KV binding.
+16:03:21 [@astrojs/cloudflare] If you see the error "Invalid binding `SESSION`" in your build output, you need to add the binding to your wrangler config file.
+16:03:22 [content] Syncing content
+16:03:22 [content] Synced content
+16:03:22 [types] Generated 959ms
+16:03:22 [build] output: "server"
+16:03:22 [build] mode: "server"
+16:03:22 [build] directory: C:\Users\trung\cloudflare-vmail\apps\astro\dist\
+16:03:22 [build] adapter: @astrojs/cloudflare
+16:03:22 [build] Collecting build info...
+16:03:22 [build] Γ£ô Completed in 1.09s.
+16:03:22 [build] Building server entrypoints...
+16:03:29 [ERROR] [vite] Γ£ù Build failed in 6.88s
+Could not resolve "../../layouts/DocLayout.astro" from "src/content/docs/api-docs.mdx"
+file: C:/Users/trung/cloudflare-vmail/apps/astro/src/content/docs/api-docs.mdx
+  Stack trace:
+    at getRollupError (file:///C:/Users/trung/cloudflare-vmail/node_modules/.pnpm/rollup@4.52.3/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at ModuleLoader.handleInvalidResolvedId (file:///C:/Users/trung/cloudflare-vmail/node_modules/.pnpm/rollup@4.52.3/node_modules/rollup/dist/es/shared/node-entry.js:21564:24)

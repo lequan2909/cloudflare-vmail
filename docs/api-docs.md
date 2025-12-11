@@ -1,16 +1,7 @@
----
-title: API Documentation
-description: Complete API reference for Cloudflare VMail services
-layout: ../../layouts/DocsLayout.astro
----
-
 # Cloudflare VMail API Documentation
 
-Welcome to the Cloudflare VMail API documentation. Our service provides a comprehensive set of endpoints for email management, automation, and system administration.
-
 ## Authentication
-
-All private API endpoints require authentication via Header.
+All API endpoints (except public ones) require authentication via Header.
 
 - **Header**: `X-API-Key`
 - **Value**: Your configured `API_KEY` in `wrangler.toml`.
@@ -20,7 +11,7 @@ All private API endpoints require authentication via Header.
 ## 🔧 Management Endpoints
 
 ### 1. Manual Cleanup
-Trigger the cleanup routine immediately. This is useful for manual maintenance or testing.
+Trigger the cleanup routine immediately (useful for testing or manual maintenance).
 - **URL**: `GET /api/v1/cleanup`
 - **Auth**: Required
 - **Response**:
@@ -32,7 +23,7 @@ Trigger the cleanup routine immediately. This is useful for manual maintenance o
   ```
 
 ### 2. Send Email
-Send an email using the configured 3rd-party provider (e.g., Resend, SendGrid).
+Send an email using the configured 3rd-party provider (Resend/SendGrid).
 - **URL**: `POST /api/v1/send`
 - **Auth**: Required
 - **Body**:
@@ -50,7 +41,7 @@ Send an email using the configured 3rd-party provider (e.g., Resend, SendGrid).
 ## 📬 Inbox Endpoints (Automation)
 
 ### 3. Get Latest Email
-Ideally used for automation scenarios like OTP polling. Returns the single most recent email for a given address.
+Ideally used for OTP polling. Returns the single most recent email for an address.
 - **URL**: `GET /api/v1/latest/:address`
 - **Auth**: Required
 - **Response**:
@@ -59,25 +50,21 @@ Ideally used for automation scenarios like OTP polling. Returns the single most 
     "id": "email_id_123",
     "subject": "Your Login Code",
     "text": "Your code is 123456...",
-    "html": "<body>...</body>",
+    "html": "...",
     "created_at": "2024-12-10T10:00:00Z"
   }
   ```
 
 ### 4. Get Inbox
-Fetch a list of emails for a specific address.
+Fetch list of emails for a specific address.
 - **URL**: `GET /api/v1/inbox/:address`
 - **Auth**: Required
-- **Query Params**: `?limit=10` (Default: 10)
+- **Query Params**: `?limit=10` (Default 10)
 
 ---
 
 ## 🔄 Webhooks
-
-The system can be configured to send a HTTP POST request to your `WEBHOOK_URL` whenever a new email arrives.
-
-**Configuration**:
-Set `WEBHOOK_URL` in your `wrangler.toml` file.
+The system can send a POST request to your configured `WEBHOOK_URL` whenever a new email arrives.
 
 **Payload Structure**:
 ```json
@@ -88,26 +75,13 @@ Set `WEBHOOK_URL` in your `wrangler.toml` file.
   "subject": "Email Subject",
   "text": "Plain text content...",
   "html": "HTML content...",
-  "headers": { 
-    "date": "...",
-    "message-id": "..."
-  },
+  "headers": { ... },
   "attachments": [
     {
       "filename": "image.png",
       "contentType": "image/png",
-      "size": 1024,
-      "url": "https://pub-xxx.r2.dev/..." // If R2 enabled
+      "size": 1024
     }
   ]
 }
 ```
-
----
-
-## 📊 Admin API (Planned Phase 4)
-
-*Endpoints currently in development.*
-
-- `GET /api/v1/admin/emails` - List all emails.
-- `DELETE /api/v1/admin/email/:id` - Delete a specific email.

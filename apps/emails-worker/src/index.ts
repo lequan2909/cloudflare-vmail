@@ -16,8 +16,8 @@ import PostalMime from "postal-mime";
 import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { InsertEmail, insertEmailSchema, blockedSenders, emails as emailTable, InsertAttachment, attachments } from "database/schema";
-import { insertEmail, getEmails, getEmail, getEmailsByMessageTo, insertAttachment } from "database/dao";
 import { getCloudflareD1 } from "database/db";
+import { insertEmail, getEmails, getEmail, getEmailsByMessageTo, insertAttachment, getEmailsToDelete, getAttachmentsByEmailId, deleteEmail, deleteAttachmentsByEmailId, getAllEmails, deleteEmails, getAttachmentsByEmailIds, deleteAttachmentsByEmailIds } from "database/dao";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
 
@@ -38,6 +38,7 @@ type Bindings = Env & {
 	MAIL_SENDER?: string;
 	BACKUP_EMAIL?: string;
 	WEBHOOK_URL?: string;
+	MAX_EMAILS?: string;
 	[key: string]: any; // Allow dynamic access for MAIL_SENDER_n
 };
 
@@ -212,6 +213,96 @@ function getProviderConfig(env: Bindings, sender: string): { url: string, key: s
 
 	return { url: defaultUrl, key: defaultKey };
 }
+
+// Cleanup / Manual Trigger Endpoint
+app.get("/api/v1/cleanup", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	await cleanupRoutine(c.env);
+
+	return c.json({ success: true, message: "Cleanup routine executed." });
+});
+
+
+
+// Admin: Get All Emails
+app.get("/api/v1/admin/emails", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	const limit = parseInt(c.req.query("limit") || "50");
+	const offset = parseInt(c.req.query("offset") || "0");
+	const db = getCloudflareD1(c.env.DB);
+
+	// @ts-ignore
+	const emails = await getAllEmails(db, limit, offset, c.req.query("search"));
+	return c.json(emails);
+});
+
+// Admin: Bulk Delete Emails
+app.post("/api/v1/admin/emails/delete", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	try {
+		const { ids } = await c.req.json<{ ids: string[] }>();
+		if (!ids || !Array.isArray(ids) || ids.length === 0) {
+			return c.json({ error: "Invalid IDs" }, 400);
+		}
+
+		const db = getCloudflareD1(c.env.DB);
+
+		// 1. Get Attachments for all emails to delete from R2
+		// @ts-ignore
+		const attachments = await getAttachmentsByEmailIds(db, ids);
+		if (attachments && attachments.length > 0) {
+			const keysToDelete = attachments.map((a: any) => a.r2Key);
+
+			// Batch delete from R2 (limit is usually 1000, we are safe with UI paging)
+			if (keysToDelete.length > 0) {
+				await c.env.R2.delete(keysToDelete);
+			}
+			// @ts-ignore
+			await deleteAttachmentsByEmailIds(db, ids);
+		}
+
+		// 2. Delete Emails
+		// @ts-ignore
+		await deleteEmails(db, ids);
+
+		return c.json({ success: true, count: ids.length });
+	} catch (e: any) {
+		return c.json({ error: e.message }, 500);
+	}
+});
+
+// Admin: Delete Email (Single)
+app.delete("/api/v1/admin/email/:id", async (c: Context<{ Bindings: Bindings }>) => {
+	const key = c.req.header("X-API-Key");
+	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
+
+	const id = c.req.param("id");
+	const db = getCloudflareD1(c.env.DB);
+
+	// Delete from R2 first
+	// @ts-ignore
+	const attachments = await getAttachmentsByEmailId(db, id);
+	if (attachments && attachments.length > 0) {
+		const keysToDelete = attachments.map((a: any) => a.r2Key);
+		if (keysToDelete.length > 0) {
+			await c.env.R2.delete(keysToDelete);
+		}
+		// @ts-ignore
+		await deleteAttachmentsByEmailId(db, id);
+	}
+
+	// Delete from DB
+	// @ts-ignore
+	await deleteEmail(db, id);
+
+	return c.json({ success: true, id });
+});
 
 // Email Sending Helper (now an API endpoint)
 app.post("/api/v1/send", async (c: Context<{ Bindings: Bindings }>) => {
@@ -777,5 +868,49 @@ export default {
 	},
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		return app.fetch(request, env, ctx);
+	},
+	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+		ctx.waitUntil(cleanupRoutine(env as Bindings));
 	}
 } satisfies ExportedHandler<Env>;
+
+async function cleanupRoutine(env: Bindings) {
+	try {
+		console.log("Only keeping the latest emails...");
+		const db = getCloudflareD1(env.DB);
+
+		// Default to 1000 if not set
+		const maxEmails = parseInt(env.MAX_EMAILS || "1000");
+
+		// 1. Get IDs to delete
+		const idsToDelete = await getEmailsToDelete(db as any, maxEmails);
+		console.log(`Found ${idsToDelete.length} emails to delete (Limit: ${maxEmails})`);
+
+		if (idsToDelete.length === 0) return;
+
+		// 2. Process Deletion
+		for (const id of idsToDelete) {
+			// 2.1 Get Attachments from R2
+			const attachments = await getAttachmentsByEmailId(db as any, id);
+			if (attachments && attachments.length > 0) {
+				const keysToDelete = attachments.map((a: any) => a.r2Key);
+				if (keysToDelete.length > 0) {
+					await env.R2.delete(keysToDelete);
+					console.log(`Deleted ${keysToDelete.length} files from R2 for email ${id}`);
+				}
+				// Delete from attachments table
+				// @ts-ignore
+				await deleteAttachmentsByEmailId(db as any, id);
+			}
+
+			// 2.2 Delete Email from DB
+			// @ts-ignore
+			await deleteEmail(db as any, id);
+			console.log(`Deleted email ${id} from DB`);
+		}
+	} catch (e) {
+		console.error("Cleanup Error:", e);
+	}
+}
+
+

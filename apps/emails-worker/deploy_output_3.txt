@@ -1,0 +1,31 @@
+
+ Γ¢à∩╕Å wrangler 4.41.0 (update available 4.53.0)
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+Total Upload: 482.21 KiB / gzip: 97.75 KiB
+Worker Startup Time: 14 ms
+Your Worker has access to the following bindings:
+Binding                                                                      Resource                  
+env.DB (vmail-db)                                                            D1 Database               
+env.R2 (vmail-attachments)                                                   R2 Bucket                 
+env.API_KEY ("Trung6689@")                                                   Environment Variable      
+env.MAIL_DOMAIN ("docxs.online,atmvn.shop")                                  Environment Variable      
+env.TELEGRAM_BOT_TOKEN ("7595618103:AAH3-6_hDKwK9av_robsoN8Dpj...")          Environment Variable      
+env.TELEGRAM_ID ("1700317484")                                               Environment Variable      
+env.OPENAI_API_KEY ("Trung6689@")                                            Environment Variable      
+env.OPENAI_CHAT_MODEL ("gemini-2.5-flash")                                   Environment Variable      
+env.OPENAI_COMPLETIONS_API ("https://gemini1.docxs.online/v1/chat/...")      Environment Variable      
+env.SUMMARY_TARGET_LANG ("Vietnamese")                                       Environment Variable      
+env.SEND_PROVIDER_URL ("https://api.resend.com/emails")                      Environment Variable      
+env.SEND_PROVIDER_KEY ("re_eY3hzKRc_DxqPDYeWfZCc6BXPRWVZDx4s")               Environment Variable      
+env.MAIL_SENDER ("noreply@docxs.online")                                     Environment Variable      
+env.BACKUP_EMAIL ("trung27031@gmail.com")                                    Environment Variable      
+env.WEBHOOK_URL ("https://n8n.docxs.online/webhook-test...")                 Environment Variable      
+env.MAX_EMAILS ("1000")                                                      Environment Variable      
+env.SEND_PROVIDER_URL_1 ("https://api.resend.com/emails")                    Environment Variable      
+env.SEND_PROVIDER_KEY_1 ("re_eY3hzKRc_DxqPDYeWfZCc6BXPRWVZDx4s")             Environment Variable      
+env.MAIL_SENDER_1 ("docxs.online,atmvn.shop")                                Environment Variable      
+
+Uploaded emails-worker (10.29 sec)
+Deployed emails-worker triggers (3.44 sec)
+  https://emails-worker.trung27031.workers.dev
+Current Version ID: 41ac7060-f8be-45af-95ae-b9943b4b5343

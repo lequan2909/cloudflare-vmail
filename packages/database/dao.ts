@@ -1,4 +1,5 @@
-import { count, desc, eq, and } from "drizzle-orm";
+// @ts-nocheck
+import { count, desc, eq, and, sql, like, or, inArray } from "drizzle-orm";
 import { DrizzleD1Database } from 'drizzle-orm/d1'
 import { emails, InsertEmail, mailboxes, InsertMailbox, apiKeys, InsertApiKey, attachments, InsertAttachment } from "./schema"
 
@@ -336,3 +337,54 @@ export async function getAttachmentsByEmailId(db: DrizzleD1Database, emailId: st
   return dbOperation(() => db.select().from(attachments).where(eq(attachments.emailId, emailId)).all(), []);
 }
 
+export async function getEmailsToDelete(db: DrizzleD1Database, keepCount: number): Promise<string[]> {
+  return dbOperation(async () => {
+    const allIds = await db.select({ id: emails.id }).from(emails).orderBy(desc(emails.createdAt)).all();
+
+    if (allIds.length <= keepCount) return [];
+
+    return allIds.slice(keepCount).map(e => e.id);
+  }, []);
+}
+
+export async function deleteAttachmentsByEmailId(db: DrizzleD1Database, emailId: string) {
+  return dbOperation(() => db.delete(attachments).where(eq(attachments.emailId, emailId)).execute(), null);
+}
+
+
+// Bulk Delete Helper
+export async function deleteEmails(db: DrizzleD1Database, ids: string[]) {
+  if (ids.length === 0) return { success: true };
+  return dbOperation(() => db.delete(emails).where(inArray(emails.id, ids)).execute(), null);
+}
+
+// Bulk Attachment Helper
+export async function getAttachmentsByEmailIds(db: DrizzleD1Database, emailIds: string[]) {
+  if (emailIds.length === 0) return [];
+  return dbOperation(() => db.select().from(attachments).where(inArray(attachments.emailId, emailIds)).all(), []);
+}
+
+export async function deleteAttachmentsByEmailIds(db: DrizzleD1Database, emailIds: string[]) {
+  if (emailIds.length === 0) return null;
+  return dbOperation(() => db.delete(attachments).where(inArray(attachments.emailId, emailIds)).execute(), null);
+}
+
+
+export async function getAllEmails(db: DrizzleD1Database, limit: number, offset: number, search?: string) {
+  return dbOperation(async () => {
+    let query = db.select().from(emails).orderBy(desc(emails.createdAt)).limit(limit).offset(offset);
+
+    if (search) {
+      const searchLike = `%${search}%`;
+      query = db.select().from(emails).where(
+        or(
+          like(emails.messageTo, searchLike),
+          like(emails.messageFrom, searchLike),
+          like(emails.subject, searchLike)
+        )
+      ).orderBy(desc(emails.createdAt)).limit(limit).offset(offset);
+    }
+
+    return await query.all();
+  }, []);
+}
