@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
@@ -264,7 +264,6 @@ app.get("/api/v1/admin/stats", async (c: Context<{ Bindings: Bindings }>) => {
 	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
 
 	const db = getCloudflareD1(c.env.DB);
-	// @ts-ignore
 	const [senders, receivers] = await Promise.all([
 		getSenderStats(db),
 		getReceiverStats(db)
@@ -279,7 +278,6 @@ app.get("/api/v1/admin/export", async (c: Context<{ Bindings: Bindings }>) => {
 	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
 
 	const db = getCloudflareD1(c.env.DB);
-	// @ts-ignore
 	const data = await getAllEmailsForExport(db);
 
 	// Return as downloadable file
@@ -297,7 +295,6 @@ app.get("/api/v1/admin/blocklist", async (c: Context<{ Bindings: Bindings }>) =>
 	if (key !== c.env.API_KEY) return c.json({ error: "Unauthorized" }, 401);
 
 	const db = getCloudflareD1(c.env.DB);
-	// @ts-ignore
 	const list = await getBlockedSenders(db);
 	return c.json(list);
 });
@@ -345,7 +342,6 @@ app.delete("/api/v1/admin/blocklist", async (c: Context<{ Bindings: Bindings }>)
 	if (!email) return c.json({ error: "Missing email param" }, 400);
 
 	const db = getCloudflareD1(c.env.DB);
-	// @ts-ignore
 	await removeBlockedSender(db, email);
 	return c.json({ success: true });
 });
@@ -378,7 +374,6 @@ app.post("/api/v1/admin/emails/delete", async (c: Context<{ Bindings: Bindings }
 		}
 
 		// 2. Delete Emails
-		// @ts-ignore
 		await deleteEmails(db, ids);
 
 		return c.json({ success: true, count: ids.length });
@@ -518,9 +513,11 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 				if (!email) {
 					await editTelegramMessage(token, chatId, messageId, "❌ Email not found (deleted).");
 				} else {
-					const from = email.messageFrom; // Simplified
+					const from = email.messageFrom;
 					const to = email.messageTo;
 					const subject = email.subject || "(No Subject)";
+					const workerUrl = c.env.WORKER_URL || "https://emails-worker.trung27031.workers.dev";
+					const viewUrl = `${workerUrl}/view/${email.id}`;
 
 					const headerMsg = `📬 *New Email*\n` +
 						`Subject: ${subject}\n` +
@@ -532,11 +529,11 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 						inline_keyboard: [
 							[
 								{ text: "👁️ Preview", callback_data: `preview:${email.id}` },
-								{ text: "📝 Summary", callback_data: `summary:${email.id}` }
+								{ text: "🌍 Read Online", url: viewUrl }
 							],
 							[
-								{ text: "📄 Text", callback_data: `text:${email.id}` },
-								{ text: "🌐 HTML", callback_data: `html:${email.id}` }
+								{ text: "📝 Summary", callback_data: `summary:${email.id}` },
+								{ text: "📄 Text", callback_data: `text:${email.id}` }
 							],
 							[
 								{ text: "🚫 Block Sender", callback_data: `blk:${email.id}` },
@@ -584,135 +581,124 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 				}
 			}
 			else if (action === "html") {
+				// Fallback or Legacy: If triggered, show link
 				const email = await getEmail(db, target);
 				if (email) {
-					let content = email.html || "No HTML content";
-
-					// Rewrite HTML for Telegram View? 
-					// R2 links should already be in DB if we saved them correctly.
-					// If sending as file, external images should work if accessible.
-
-					const blob = new Blob([content], { type: 'text/html' });
-					const formData = new FormData();
-					formData.append('chat_id', chatId.toString());
-					formData.append('document', blob, `email-${target}.html`);
-					formData.append('caption', '🌐 HTML Source');
-
-					await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
-						method: "POST",
-						body: formData
-					});
-					await answerCallbackQuery(token, query.id, "Sent as file 👇");
-				}
-			}
-			else if (action === "del") {
-				await deleteEmail(db, target);
-				await editTelegramMessage(token, chatId, messageId, "🗑️ Email deleted.");
-			}
-			else if (action === "blk") {
-				// Support both ID and Direct Email (Hybrid)
-				let targetEmail = target;
-				if (!target.includes("@")) {
-					const email = await getEmail(db, target);
-					if (email) targetEmail = email.messageFrom;
-					else targetEmail = "";
-				}
-
-				if (targetEmail) {
-					await blockSenderCaller(db, targetEmail);
-					await answerCallbackQuery(token, query.id, `🚫 Blocked: ${targetEmail}`);
-				} else {
-					await answerCallbackQuery(token, query.id, "❌ Email not found");
-				}
-			}
-			else if (action === "wht") {
-				// Support both ID and Direct Email (Hybrid)
-				let targetEmail = target;
-				if (!target.includes("@")) {
-					const email = await getEmail(db, target);
-					if (email) targetEmail = email.messageFrom;
-					else targetEmail = "";
-				}
-
-				if (targetEmail) {
-					await whitelistSenderCaller(db, targetEmail);
-					await answerCallbackQuery(token, query.id, `✅ Whitelisted: ${targetEmail}`);
-				} else {
-					await answerCallbackQuery(token, query.id, "❌ Email not found");
-				}
-			}
-			else if (action.startsWith("unblock_list")) {
-				// Manage unblocking from list (Target is email here, as list is local)
-				await whitelistSenderCaller(db, target);
-				await editTelegramMessage(token, chatId, messageId, `✅ Unblocked ${target}. List updated.`);
-			}
-
-			await answerCallbackQuery(token, query.id);
-
-		} catch (e) {
-			console.error(e);
-		}
-		return c.json({ ok: true });
-	}
-
-	if (!update.message || !update.message.text) return c.json({ ok: true });
-
-	const chatId = update.message.chat.id;
-	const text = update.message.text.trim();
-
-	// Basic Commands
-	try {
-		if (text === "/start") {
-			await sendTelegramMessage(token, chatId, "👋 Welcome to vMail Bot!\nManaged by Cloudflare Workers.");
-		} else if (text === "/new") {
-			const domainStr = c.env.MAIL_DOMAIN || "example.com";
-			const domains = domainStr.split(",").map(d => d.trim());
-			const domain = domains[Math.floor(Math.random() * domains.length)];
-
-			const randomId = nanoid(8);
-			const emailAddress = `${randomId}@${domain}`;
-			await sendTelegramMessage(token, chatId, `📧 New Address: \`${emailAddress}\``);
-		} else if (text === "/blocklist") {
-			const list = await db.select().from(blockedSenders).all();
-			if (list.length === 0) {
-				await sendTelegramMessage(token, chatId, "✅ Blocklist is empty.");
-			} else {
-				let msg = "🚫 **Blocked Senders:**\n\n";
-				const keyboardRows = [];
-				for (const item of list) {
-					msg += `- \`${item.email}\`\n`;
-					// Button data limit is 64 bytes. "wht:" is 4 bytes. Email must be < 60 bytes.
-					if (item.email.length < 58) {
-						keyboardRows.push([{ text: `🔓 Unblock ${item.email}`, callback_data: `wht:${item.email}` }]);
-					}
-				}
-				// Split into chunks if too many rows? For now Limit to 10 recent
-				const keyboard = { inline_keyboard: keyboardRows.slice(0, 10) };
-				await sendTelegramMessage(token, chatId, msg, false, keyboard);
-			}
-		} else if (text.startsWith("/check")) {
-			const parts = text.split(" ");
-			const address = parts[1];
-			if (!address) {
-				await sendTelegramMessage(token, chatId, "Usage: `/check <address>`");
-			} else {
-				const emails = await getEmailsByMessageTo(db, address);
-				if (emails.length === 0) {
-					await sendTelegramMessage(token, chatId, `📭 Box ${address} is empty.`);
-				} else {
-					let msg = `📬 **Inbox ${address}:**\n`;
-					for (const email of emails.slice(0, 5)) {
-						msg += `\n🆔 \`${email.id}\`\nFROM: ${email.messageFrom}\nSUBJ: ${email.subject}\n----------------`;
-					}
-					await sendTelegramMessage(token, chatId, msg);
+					const workerUrl = c.env.WORKER_URL || "https://emails-worker.trung27031.workers.dev";
+					const viewUrl = `${workerUrl}/view/${target}`;
+					await editTelegramMessage(token, chatId, messageId, `🌍 *Read Online:*\n\n${viewUrl}`, false, getBackKeyboard(target));
 				}
 			}
 		}
-	} catch (e) {
-		console.error(e);
+			}
+	else if (action === "del") {
+		await deleteEmail(db, target);
+		await editTelegramMessage(token, chatId, messageId, "🗑️ Email deleted.");
+	}
+	else if (action === "blk") {
+		// Support both ID and Direct Email (Hybrid)
+		let targetEmail = target;
+		if (!target.includes("@")) {
+			const email = await getEmail(db, target);
+			if (email) targetEmail = email.messageFrom;
+			else targetEmail = "";
+		}
+
+		if (targetEmail) {
+			await blockSenderCaller(db, targetEmail);
+			await answerCallbackQuery(token, query.id, `🚫 Blocked: ${targetEmail}`);
+		} else {
+			await answerCallbackQuery(token, query.id, "❌ Email not found");
+		}
+	}
+	else if (action === "wht") {
+		// Support both ID and Direct Email (Hybrid)
+		let targetEmail = target;
+		if (!target.includes("@")) {
+			const email = await getEmail(db, target);
+			if (email) targetEmail = email.messageFrom;
+			else targetEmail = "";
+		}
+
+		if (targetEmail) {
+			await whitelistSenderCaller(db, targetEmail);
+			await answerCallbackQuery(token, query.id, `✅ Whitelisted: ${targetEmail}`);
+		} else {
+			await answerCallbackQuery(token, query.id, "❌ Email not found");
+		}
+	}
+	else if (action.startsWith("unblock_list")) {
+		// Manage unblocking from list (Target is email here, as list is local)
+		await whitelistSenderCaller(db, target);
+		await editTelegramMessage(token, chatId, messageId, `✅ Unblocked ${target}. List updated.`);
 	}
 
-	return c.json({ ok: true });
+	await answerCallbackQuery(token, query.id);
+
+} catch (e) {
+	console.error(e);
+}
+return c.json({ ok: true });
+	}
+
+if (!update.message || !update.message.text) return c.json({ ok: true });
+
+const chatId = update.message.chat.id;
+const text = update.message.text.trim();
+
+// Basic Commands
+try {
+	if (text === "/start") {
+		await sendTelegramMessage(token, chatId, "👋 Welcome to vMail Bot!\nManaged by Cloudflare Workers.");
+	} else if (text === "/new") {
+		const domainStr = c.env.MAIL_DOMAIN || "example.com";
+		const domains = domainStr.split(",").map(d => d.trim());
+		const domain = domains[Math.floor(Math.random() * domains.length)];
+
+		const randomId = nanoid(8);
+		const emailAddress = `${randomId}@${domain}`;
+		await sendTelegramMessage(token, chatId, `📧 New Address: \`${emailAddress}\``);
+	} else if (text === "/blocklist") {
+		const list = await db.select().from(blockedSenders).all();
+		if (list.length === 0) {
+			await sendTelegramMessage(token, chatId, "✅ Blocklist is empty.");
+		} else {
+			let msg = "🚫 **Blocked Senders:**\n\n";
+			const keyboardRows = [];
+			for (const item of list) {
+				msg += `- \`${item.email}\`\n`;
+				// Button data limit is 64 bytes. "wht:" is 4 bytes. Email must be < 60 bytes.
+				if (item.email.length < 58) {
+					keyboardRows.push([{ text: `🔓 Unblock ${item.email}`, callback_data: `wht:${item.email}` }]);
+				}
+			}
+			// Split into chunks if too many rows? For now Limit to 10 recent
+			const keyboard = { inline_keyboard: keyboardRows.slice(0, 10) };
+			await sendTelegramMessage(token, chatId, msg, false, keyboard);
+		}
+	} else if (text.startsWith("/check")) {
+		const parts = text.split(" ");
+		const address = parts[1];
+		if (!address) {
+			await sendTelegramMessage(token, chatId, "Usage: `/check <address>`");
+		} else {
+			const emails = await getEmailsByMessageTo(db, address);
+			if (emails.length === 0) {
+				await sendTelegramMessage(token, chatId, `📭 Box ${address} is empty.`);
+			} else {
+				let msg = `📬 **Inbox ${address}:**\n`;
+				for (const email of emails.slice(0, 5)) {
+					msg += `\n🆔 \`${email.id}\`\nFROM: ${email.messageFrom}\nSUBJ: ${email.subject}\n----------------`;
+				}
+				await sendTelegramMessage(token, chatId, msg);
+			}
+		}
+	}
+} catch (e) {
+	console.error(e);
+}
+
+return c.json({ ok: true });
 });
 
 // AI Summarize Endpoint (Optional external call)
@@ -858,7 +844,7 @@ async function sendWebhook(env: Bindings, email: any) {
 			to: email.messageTo,
 			subject: email.subject,
 			text: email.text,
-			html: email.html, // Optional: might be too large
+			html: (email.html && email.html.length < 50000) ? email.html : undefined, // Limit HTML size for Webhook
 			// summary: email.summary, // Summary column not yet in DB
 			receivedAt: email.createdAt,
 			attachments: email.attachments?.map((a: any) => ({
@@ -907,7 +893,6 @@ export default {
 
 			// 1. Blocklist Check (Check BOTH Envelope and Header From to be safe)
 			const db = getCloudflareD1(bindings.DB);
-			// @ts-ignore
 			if (await isSenderBlocked(db, message.from) || await isSenderBlocked(db, displaySender)) {
 				console.log(`Blocked email from: ${message.from} / ${displaySender}`);
 				message.setReject("Sender is blocked");
@@ -1091,7 +1076,7 @@ async function cleanupRoutine(env: Bindings) {
 		const maxEmails = parseInt(env.MAX_EMAILS || "1000");
 
 		// 1. Get IDs to delete
-		const idsToDelete = await getEmailsToDelete(db as any, maxEmails);
+		const idsToDelete = await getEmailsToDelete(db, maxEmails);
 		console.log(`Found ${idsToDelete.length} emails to delete (Limit: ${maxEmails})`);
 
 		if (idsToDelete.length === 0) return;
@@ -1099,7 +1084,7 @@ async function cleanupRoutine(env: Bindings) {
 		// 2. Process Deletion
 		for (const id of idsToDelete) {
 			// 2.1 Get Attachments from R2
-			const attachments = await getAttachmentsByEmailId(db as any, id);
+			const attachments = await getAttachmentsByEmailId(db, id);
 			if (attachments && attachments.length > 0) {
 				const keysToDelete = attachments.map((a: any) => a.r2Key);
 				if (keysToDelete.length > 0) {
@@ -1107,13 +1092,11 @@ async function cleanupRoutine(env: Bindings) {
 					console.log(`Deleted ${keysToDelete.length} files from R2 for email ${id}`);
 				}
 				// Delete from attachments table
-				// @ts-ignore
-				await deleteAttachmentsByEmailId(db as any, id);
+				await deleteAttachmentsByEmailId(db, id);
 			}
 
 			// 2.2 Delete Email from DB
-			// @ts-ignore
-			await deleteEmail(db as any, id);
+			await deleteEmail(db, id);
 			console.log(`Deleted email ${id} from DB`);
 		}
 	} catch (e) {
