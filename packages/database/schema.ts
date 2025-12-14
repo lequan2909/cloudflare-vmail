@@ -110,4 +110,17 @@ export const attachments = sqliteTable("attachments", {
 export const insertAttachmentSchema = createInsertSchema(attachments);
 export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
 
+import { relations } from 'drizzle-orm';
+
+export const emailRelations = relations(emails, ({ many }) => ({
+  attachments: many(attachments),
+}));
+
+export const attachmentRelations = relations(attachments, ({ one }) => ({
+  email: one(emails, {
+    fields: [attachments.emailId],
+    references: [emails.id],
+  }),
+}));
+
 

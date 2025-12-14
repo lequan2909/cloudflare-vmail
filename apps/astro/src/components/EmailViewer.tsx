@@ -1,4 +1,4 @@
-import { Check, Code2, Copy, FileText, Maximize2, Shield, Sparkles, Send } from 'lucide-react'
+import { Check, Code2, Copy, FileText, Maximize2, Shield, Sparkles, Send, Paperclip, File as FileIcon, Download } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 import { buildRawMime, copyToClipboard, sanitizeHtml } from '@/lib/email-utils'
@@ -16,6 +16,12 @@ interface EmailViewerProps {
     text?: string | null
     html?: string | null
     sender?: { name?: string, address: string }
+    attachments?: Array<{
+      filename: string
+      size: number
+      contentType: string
+      r2Key: string
+    }>
   }
 }
 
@@ -339,6 +345,37 @@ export function EmailViewer({ email }: EmailViewerProps) {
                 Viewing the reconstructed MIME source - useful for debugging email delivery issues and exporting.
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachments Section */}
+      {email.attachments && email.attachments.length > 0 && (
+        <div className="bg-muted/30 border border-border rounded-lg p-4">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Paperclip className="h-4 w-4" />
+            Attachments ({email.attachments.length})
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {email.attachments.map((att, i) => (
+              <a
+                key={i}
+                href={`${import.meta.env.PUBLIC_WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/api/v1/attachments/${email.id}/${encodeURIComponent(att.filename)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 bg-card border border-border rounded-md hover:border-primary/50 transition-colors group"
+                download
+              >
+                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0 group-hover:bg-primary/10">
+                  <FileIcon className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate" title={att.filename}>{att.filename}</p>
+                  <p className="text-xs text-muted-foreground">{(att.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <Download className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </a>
+            ))}
           </div>
         </div>
       )}

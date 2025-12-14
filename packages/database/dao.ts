@@ -29,10 +29,23 @@ export async function deleteAllEmailsByMessageTo(db: DrizzleD1Database, messageT
   return dbOperation(() => db.delete(emails).where(eq(emails.messageTo, messageTo)).execute(), null);
 }
 
-export async function getEmail(db: DrizzleD1Database, id: string) {
+export async function getEmail(db: DrizzleD1Database<any>, id: string) {
   return dbOperation(async () => {
+    // Try Query API
+    if (db.query && db.query.emails) {
+      return await db.query.emails.findFirst({
+        where: eq(emails.id, id),
+        with: { attachments: true }
+      });
+    }
+
+    // Fallback
     const result = await db.select().from(emails).where(eq(emails.id, id)).all();
-    return result[0] || null;
+    const email = result[0] || null;
+    if (!email) return null;
+
+    const relatedAttachments = await db.select().from(attachments).where(eq(attachments.emailId, id)).all();
+    return { ...email, attachments: relatedAttachments };
   }, null);
 }
 
@@ -48,15 +61,44 @@ export async function getMailboxOfEmail(db: DrizzleD1Database, id: string) {
   }, null);
 }
 
-export async function getEmailsByMessageTo(db: DrizzleD1Database, messageTo: string) {
-  return dbOperation(() =>
-    db.select()
+// Note: D1 with Drizzle Query API requires the schema to be passed to constructor.
+// Assuming the db passed here is typed with schema.
+export async function getEmailsByMessageTo(db: DrizzleD1Database<any>, messageTo: string) {
+  return dbOperation(async () => {
+    // Try using Query API if available (preferred for relations)
+    if (db.query && db.query.emails) {
+      return await db.query.emails.findMany({
+        where: eq(emails.messageTo, messageTo),
+        orderBy: [desc(emails.createdAt)],
+        with: {
+          attachments: true
+        }
+      });
+    }
+
+    // Fallback for raw query (if schema not passed to Drizzle) - Manual Join
+    const userEmails = await db.select()
       .from(emails)
       .where(eq(emails.messageTo, messageTo))
       .orderBy(desc(emails.createdAt))
-      .all(),
-    []
-  );
+      .all();
+
+    if (userEmails.length === 0) return [];
+
+    const emailIds = userEmails.map(e => e.id);
+    const relatedAttachments = await db.select()
+      .from(attachments)
+      .where(inArray(attachments.emailId, emailIds))
+      .all();
+
+    // Attach to emails
+    const emailsWithAttachments = userEmails.map(email => ({
+      ...email,
+      attachments: relatedAttachments.filter(a => a.emailId === email.id)
+    }));
+
+    return emailsWithAttachments;
+  }, []);
 }
 
 // Admin: Get Stats Grouped by Sender

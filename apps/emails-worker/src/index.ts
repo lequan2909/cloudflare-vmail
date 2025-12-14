@@ -17,7 +17,9 @@ import { Hono, Context } from "hono";
 import { cors } from "hono/cors";
 import { InsertEmail, insertEmailSchema, blockedSenders, emails as emailTable, InsertAttachment, attachments } from "database/schema";
 import { getCloudflareD1 } from "database/db";
+// @ts-ignore
 import { insertEmail, getEmails, getEmail, getEmailsByMessageTo, insertAttachment, getEmailsToDelete, getAttachmentsByEmailId, deleteEmail, deleteAttachmentsByEmailId, getAllEmails, deleteEmails, getAttachmentsByEmailIds, deleteAttachmentsByEmailIds, getSenderStats, getReceiverStats, getAllEmailsForExport, getBlockedSenders, addBlockedSender, removeBlockedSender, isSenderBlocked } from "database/dao";
+
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
 
@@ -108,7 +110,7 @@ function extractOtp(subject: string, body: string): string | null {
 		// Regex: Match common keywords followed by 4-8 digits.
 		const otpRegex = /(?:code|otp|verify|verification|pin|secret|mã|xác\s?thực|số|login).*?(\b\d{4,8}\b)/is;
 		const match = searchArea.match(otpRegex);
-		return match ? match[1] : null;
+		return (match && match[1]) ? match[1] : null; // Fixed type
 	} catch (e) {
 		console.error("OTP Extraction Error:", e);
 		return null;
@@ -554,6 +556,7 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 			else if (action === "summary") {
 				const email = await getEmail(db, target);
 				if (email) {
+					// @ts-ignore
 					let summary = email.summary;
 					if (!summary && c.env.OPENAI_API_KEY) {
 						await answerCallbackQuery(token, query.id, "Generating summary...");
@@ -589,116 +592,114 @@ app.post("/api/telegram/webhook", async (c: Context<{ Bindings: Bindings }>) => 
 					await editTelegramMessage(token, chatId, messageId, `🌍 *Read Online:*\n\n${viewUrl}`, false, getBackKeyboard(target));
 				}
 			}
-		}
+			else if (action === "del") {
+				await deleteEmail(db, target);
+				await editTelegramMessage(token, chatId, messageId, "🗑️ Email deleted.");
 			}
-	else if (action === "del") {
-		await deleteEmail(db, target);
-		await editTelegramMessage(token, chatId, messageId, "🗑️ Email deleted.");
-	}
-	else if (action === "blk") {
-		// Support both ID and Direct Email (Hybrid)
-		let targetEmail = target;
-		if (!target.includes("@")) {
-			const email = await getEmail(db, target);
-			if (email) targetEmail = email.messageFrom;
-			else targetEmail = "";
-		}
+			else if (action === "blk") {
+				// Support both ID and Direct Email (Hybrid)
+				let targetEmail = target;
+				if (!target.includes("@")) {
+					const email = await getEmail(db, target);
+					if (email) targetEmail = email.messageFrom;
+					else targetEmail = "";
+				}
 
-		if (targetEmail) {
-			await blockSenderCaller(db, targetEmail);
-			await answerCallbackQuery(token, query.id, `🚫 Blocked: ${targetEmail}`);
-		} else {
-			await answerCallbackQuery(token, query.id, "❌ Email not found");
-		}
-	}
-	else if (action === "wht") {
-		// Support both ID and Direct Email (Hybrid)
-		let targetEmail = target;
-		if (!target.includes("@")) {
-			const email = await getEmail(db, target);
-			if (email) targetEmail = email.messageFrom;
-			else targetEmail = "";
-		}
-
-		if (targetEmail) {
-			await whitelistSenderCaller(db, targetEmail);
-			await answerCallbackQuery(token, query.id, `✅ Whitelisted: ${targetEmail}`);
-		} else {
-			await answerCallbackQuery(token, query.id, "❌ Email not found");
-		}
-	}
-	else if (action.startsWith("unblock_list")) {
-		// Manage unblocking from list (Target is email here, as list is local)
-		await whitelistSenderCaller(db, target);
-		await editTelegramMessage(token, chatId, messageId, `✅ Unblocked ${target}. List updated.`);
-	}
-
-	await answerCallbackQuery(token, query.id);
-
-} catch (e) {
-	console.error(e);
-}
-return c.json({ ok: true });
-	}
-
-if (!update.message || !update.message.text) return c.json({ ok: true });
-
-const chatId = update.message.chat.id;
-const text = update.message.text.trim();
-
-// Basic Commands
-try {
-	if (text === "/start") {
-		await sendTelegramMessage(token, chatId, "👋 Welcome to vMail Bot!\nManaged by Cloudflare Workers.");
-	} else if (text === "/new") {
-		const domainStr = c.env.MAIL_DOMAIN || "example.com";
-		const domains = domainStr.split(",").map(d => d.trim());
-		const domain = domains[Math.floor(Math.random() * domains.length)];
-
-		const randomId = nanoid(8);
-		const emailAddress = `${randomId}@${domain}`;
-		await sendTelegramMessage(token, chatId, `📧 New Address: \`${emailAddress}\``);
-	} else if (text === "/blocklist") {
-		const list = await db.select().from(blockedSenders).all();
-		if (list.length === 0) {
-			await sendTelegramMessage(token, chatId, "✅ Blocklist is empty.");
-		} else {
-			let msg = "🚫 **Blocked Senders:**\n\n";
-			const keyboardRows = [];
-			for (const item of list) {
-				msg += `- \`${item.email}\`\n`;
-				// Button data limit is 64 bytes. "wht:" is 4 bytes. Email must be < 60 bytes.
-				if (item.email.length < 58) {
-					keyboardRows.push([{ text: `🔓 Unblock ${item.email}`, callback_data: `wht:${item.email}` }]);
+				if (targetEmail) {
+					await blockSenderCaller(db, targetEmail);
+					await answerCallbackQuery(token, query.id, `🚫 Blocked: ${targetEmail}`);
+				} else {
+					await answerCallbackQuery(token, query.id, "❌ Email not found");
 				}
 			}
-			// Split into chunks if too many rows? For now Limit to 10 recent
-			const keyboard = { inline_keyboard: keyboardRows.slice(0, 10) };
-			await sendTelegramMessage(token, chatId, msg, false, keyboard);
+			else if (action === "wht") {
+				// Support both ID and Direct Email (Hybrid)
+				let targetEmail = target;
+				if (!target.includes("@")) {
+					const email = await getEmail(db, target);
+					if (email) targetEmail = email.messageFrom;
+					else targetEmail = "";
+				}
+
+				if (targetEmail) {
+					await whitelistSenderCaller(db, targetEmail);
+					await answerCallbackQuery(token, query.id, `✅ Whitelisted: ${targetEmail}`);
+				} else {
+					await answerCallbackQuery(token, query.id, "❌ Email not found");
+				}
+			}
+			else if (action.startsWith("unblock_list")) {
+				// Manage unblocking from list (Target is email here, as list is local)
+				await whitelistSenderCaller(db, target);
+				await editTelegramMessage(token, chatId, messageId, `✅ Unblocked ${target}. List updated.`);
+			}
+
+			await answerCallbackQuery(token, query.id);
+
+		} catch (e) {
+			console.error(e);
 		}
-	} else if (text.startsWith("/check")) {
-		const parts = text.split(" ");
-		const address = parts[1];
-		if (!address) {
-			await sendTelegramMessage(token, chatId, "Usage: `/check <address>`");
-		} else {
-			const emails = await getEmailsByMessageTo(db, address);
-			if (emails.length === 0) {
-				await sendTelegramMessage(token, chatId, `📭 Box ${address} is empty.`);
+		return c.json({ ok: true });
+	}
+
+	if (!update.message || !update.message.text) return c.json({ ok: true });
+
+	const chatId = update.message.chat.id;
+	const text = update.message.text.trim();
+
+	// Basic Commands
+	try {
+		if (text === "/start") {
+			await sendTelegramMessage(token, chatId, "👋 Welcome to vMail Bot!\nManaged by Cloudflare Workers.");
+		} else if (text === "/new") {
+			const domainStr = c.env.MAIL_DOMAIN || "example.com";
+			const domains = domainStr.split(",").map(d => d.trim());
+			const domain = domains[Math.floor(Math.random() * domains.length)];
+
+			const randomId = nanoid(8);
+			const emailAddress = `${randomId}@${domain}`;
+			await sendTelegramMessage(token, chatId, `📧 New Address: \`${emailAddress}\``);
+		} else if (text === "/blocklist") {
+			const list = await db.select().from(blockedSenders).all();
+			if (list.length === 0) {
+				await sendTelegramMessage(token, chatId, "✅ Blocklist is empty.");
 			} else {
-				let msg = `📬 **Inbox ${address}:**\n`;
-				for (const email of emails.slice(0, 5)) {
-					msg += `\n🆔 \`${email.id}\`\nFROM: ${email.messageFrom}\nSUBJ: ${email.subject}\n----------------`;
+				let msg = "🚫 **Blocked Senders:**\n\n";
+				const keyboardRows = [];
+				for (const item of list) {
+					msg += `- \`${item.email}\`\n`;
+					// Button data limit is 64 bytes. "wht:" is 4 bytes. Email must be < 60 bytes.
+					if (item.email.length < 58) {
+						keyboardRows.push([{ text: `🔓 Unblock ${item.email}`, callback_data: `wht:${item.email}` }]);
+					}
 				}
-				await sendTelegramMessage(token, chatId, msg);
+				// Split into chunks if too many rows? For now Limit to 10 recent
+				const keyboard = { inline_keyboard: keyboardRows.slice(0, 10) };
+				await sendTelegramMessage(token, chatId, msg, false, keyboard);
+			}
+		} else if (text.startsWith("/check")) {
+			const parts = text.split(" ");
+			const address = parts[1];
+			if (!address) {
+				await sendTelegramMessage(token, chatId, "Usage: `/check <address>`");
+			} else {
+				const emails = await getEmailsByMessageTo(db, address);
+				if (emails.length === 0) {
+					await sendTelegramMessage(token, chatId, `📭 Box ${address} is empty.`);
+				} else {
+					let msg = `📬 **Inbox ${address}:**\n`;
+					for (const email of emails.slice(0, 5)) {
+						msg += `\n🆔 \`${email.id}\`\nFROM: ${email.messageFrom}\nSUBJ: ${email.subject}\n----------------`;
+					}
+					await sendTelegramMessage(token, chatId, msg);
+				}
 			}
 		}
+	} catch (e) {
+		console.error(e);
 	}
-} catch (e) {
-	console.error(e);
-}
 
-return c.json({ ok: true });
+	return c.json({ ok: true });
 });
 
 // AI Summarize Endpoint (Optional external call)
@@ -769,7 +770,7 @@ app.get("/api/v1/domains", (c) => {
 	// 2. Add from MAIL_SENDER (default)
 	if (c.env.MAIL_SENDER) {
 		const parts = c.env.MAIL_SENDER.split("@");
-		if (parts.length === 2) domains.add(parts[1].trim());
+		if (parts.length === 2 && parts[1]) domains.add(parts[1].trim());
 	}
 
 	// 3. Add from MAIL_SENDER_n
@@ -779,7 +780,8 @@ app.get("/api/v1/domains", (c) => {
 			senderList.split(",").forEach(d => {
 				const trimmed = d.trim();
 				if (trimmed.includes("@")) {
-					domains.add(trimmed.split("@")[1]);
+					const domain = trimmed.split("@")[1];
+					if (domain) domains.add(domain);
 				} else {
 					domains.add(trimmed);
 				}
@@ -1021,12 +1023,23 @@ export default {
 				const otpLine = otp ? `\n🔑 OTP: <code>${otp}</code>` : "";
 
 				// HTML Message
-				const alertMsg = `📬 <b>New Email</b>\n` +
+				let alertMsg = `📬 <b>New Email</b>\n` +
 					`<b>Subject:</b> ${subject}\n` +
 					`<b>From:</b> ${from}\n` +
 					`<b>To:</b> ${to}\n` +
 					`<b>Received:</b> ${now.toLocaleString()}\n` +
 					`${otpLine}`;
+
+				// Attachments List
+				if (attachmentMeta.length > 0) {
+					alertMsg += `\n\n📎 <b>Attachments:</b>\n`;
+					attachmentMeta.forEach((att, index) => {
+						const safeFilename = escapeHtml(att.filename);
+						// Public Download Link
+						const downloadUrl = `${bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/api/v1/attachments/${newEmail.id}/${encodeURIComponent(att.filename)}`;
+						alertMsg += `${index + 1}. <a href="${downloadUrl}">${safeFilename}</a> (${(att.size / 1024).toFixed(1)} KB)\n`;
+					});
+				}
 
 				const viewUrl = `${bindings.WORKER_URL || "https://emails-worker.trung27031.workers.dev"}/view/${newEmail.id}`;
 
@@ -1062,6 +1075,7 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		return app.fetch(request, env, ctx);
 	},
+	// @ts-ignore
 	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
 		ctx.waitUntil(cleanupRoutine(env as Bindings));
 	}
